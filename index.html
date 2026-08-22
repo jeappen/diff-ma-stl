@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="Generalizable Multi-Agent Planning from Signal Temporal Logic Specifications via Diffusion" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generalizable Multi-Agent Planning from Signal Temporal Logic Specifications via Diffusion</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700|Noto+Sans:400,700|Castoro:400,700&display=swap" rel="stylesheet" />
+
+  <!-- Bulma (single source) & helpers -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+  <link rel="stylesheet" href="./static/css/index.css" />
+  <link rel="icon" href="./static/images/favicon.svg" />
+
+  <!-- Optional: MathJax for inline math in specs -->
+  <script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true,
+      tags: 'ams'
+    },
+    svg: {
+      fontCache: 'global'
+    },
+    startup: {
+      ready: function() {
+        MathJax.startup.defaultReady();
+      }
+    }
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    // Process initial math
+    if (typeof MathJax !== 'undefined') {
+      MathJax.typesetPromise().catch(function(err) {
+        console.log('MathJax initial typeset error:', err);
+      });
+    }
+
+    // Re-process math when details are toggled
+    document.querySelectorAll('details').forEach(detail => {
+      detail.addEventListener('toggle', function() {
+        if (typeof MathJax !== 'undefined' && detail.open) {
+          setTimeout(function() {
+            MathJax.typesetPromise([detail]).catch(function(err) {
+              console.log('MathJax detail typeset error:', err);
+            });
+          }, 50);
+        }
+      });
+    });
+  });
+
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <!-- JS (deferred) -->
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+
+  <style>
+    :root { --maxw: 1152px; }
+    html, body { font-family: "Noto Sans", Arial, sans-serif; scroll-behavior: smooth; }
+    .hero.is-title {
+      background: radial-gradient(1000px 500px at 10% 10%, #f2f6ff 0, #ffffff 50%, #ffffff 100%);
+      border-bottom: 1px solid #eee;
+      margin-bottom: 0;
+    }
+    .hero .title { font-family: "Google Sans", Arial, sans-serif; }
+    .is-tight { margin-top: .75rem; margin-bottom: .75rem; }
+    .container.is-max-page { max-width: var(--maxw); }
+
+    /* Keep media flush to card edges and maintain 16:9 aspect */
+    .media-card .card-content { padding: 0; }
+    .video-16by9 {
+      position: relative; width: 100%; padding-top: 56.25%; overflow: hidden; background: #000;
+      border-radius: .5rem;
+    }
+    /* Square aspect for environment videos */
+    .video-square {
+      position: relative;
+      width: 100%;
+      padding-top: 100%;   /* 1:1 */
+      overflow: hidden;
+      background: #000;
+      border-radius: .5rem;
+    }
+    .video-16by9 video, .video-16by9 iframe, .video-16by9 img,
+    .video-square  video, .video-square  iframe, .video-square  img {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+
+    /* Smaller, responsive figures that still keep aspect ratio */
+    .figure-sm { max-width: 300px; margin: 0 auto 1rem; }
+    .figure-sm img { width: 100%; height: auto; display: block; }
+
+    /* Make figures fill their column and keep aspect ratio */
+    figure.image img { max-width: 300px; width: 100%; height: auto; display: block; }
+    figure.image { margin: 0 0 1rem; }
+
+    /* Tabs & sections */
+    .section { padding-top: 3rem; padding-bottom: 3rem; }
+    .is-hidden { display: none !important; }
+
+    /* Inner obstacle toggle styled like tabs */
+    .mini-tabs { display: inline-flex; gap: .25rem; background: #f5f5f5; padding: .25rem; border-radius: 999px; }
+    .mini-tab { border: none; background: transparent; padding: .35rem .75rem; border-radius: 999px; font-size: 1.0rem; cursor: pointer; }
+    .mini-tab.is-active { background: white; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+    /* Page switcher pills in the navbar: left navbar items link within this page,
+       these pills switch between pages */
+    .page-tabs .mini-tab { color: #4a4a4a; text-decoration: none; display: inline-flex; align-items: center; }
+    .page-tabs .mini-tab.is-active { color: #363636; font-weight: 600; }
+
+    /* Bulma turns the navbar horizontal at 1024px, but the container only reaches
+       its full width at 1216px. In between there is not room for the section links
+       plus the four page pills, and the pills get pushed off-screen. Keep the
+       burger menu over that range instead. */
+    @media (min-width: 1024px) and (max-width: 1215px) {
+      .navbar { display: block; }
+      .navbar > .container { display: block; }
+      .navbar-burger { display: block; }
+      .navbar-menu { display: none; }
+      .navbar-menu.is-active {
+        display: block;
+        background-color: #fff;
+        box-shadow: 0 8px 16px rgba(10, 10, 10, .1);
+        padding: .5rem 0;
+      }
+      .navbar-menu.is-active .navbar-start,
+      .navbar-menu.is-active .navbar-end { display: block; margin: 0; }
+      .navbar-menu.is-active .navbar-item { display: block; }
+    }
+
+    /* Small note under titles */
+    .dim { color: #808080; font-size: .85rem; }
+
+    /* Light table styles for research look */
+    table.research { width: 100%; border-collapse: collapse; font-size: .95rem; margin: .5rem 0 1rem; }
+    table.research th, table.research td { border: 1px solid #e6e6e6; padding: .5rem .6rem; vertical-align: middle; }
+    table.research thead th { background: #fafafa; font-weight: 700; }
+
+    /* Wide tables scroll inside their own container instead of the page */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Collapsible sections: clear affordance + state-aware hint */
+    summary { cursor: pointer; }
+    summary:hover { color: #3273dc; }
+    .toggle-hint { font-weight: 400; font-size: .8rem; color: #999; margin-left: .5rem; }
+    details > summary .toggle-hint::after { content: "(click to expand)"; }
+    details[open] > summary .toggle-hint::after { content: "(click to collapse)"; }
+
+    /* Image lightbox modal */
+    .modal img { max-width: 100%; height: auto; }
+
+    /* Sticky subnav on wide screens */
+    @media (min-width: 1088px) {
+      .subnav { position: sticky; top: 0; background: #fff; z-index: 30; border-bottom: 1px solid #eee; }
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ====== Top Navigation ====== -->
+<nav class="navbar is-white subnav" role="navigation" aria-label="main navigation">
+  <div class="container is-max-page">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="#top"><strong>STL Diffusion</strong></a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navMenu">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div id="navMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="#overview">Overview</a>
+        <a class="navbar-item" href="#real-demo">Real Robot</a>
+        <a class="navbar-item" href="#diversity">Diversity</a>
+        <a class="navbar-item" href="#envs">Environments</a>
+        <a class="navbar-item" href="#dubins-car-results">Tables</a>
+        <a class="navbar-item" href="#supplementary">Supplementary</a>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item" aria-label="Switch page">
+          <div class="mini-tabs page-tabs">
+            <a class="mini-tab is-active" href="index.html" aria-current="page">Main</a>
+            <a class="mini-tab" href="obstacles.html">Obstacles</a>
+            <a class="mini-tab" href="failure-modes.html">Failures</a>
+            <a class="mini-tab" href="scaling.html">Scaling</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ====== Hero ====== -->
+<section id="top" class="hero is-title">
+  <div class="hero-body">
+    <div class="container is-max-page has-text-centered">
+      <h1 class="title is-1">Generalizable Multi‑Agent Planning from Signal Temporal Logic Specifications via Diffusion</h1>
+      <p class="subtitle is-5 is-tight">Project page accompanying the paper submission.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 3‑min Overview Video ====== -->
+<section id="overview" class="section">
+  <div class="container is-max-page">
+    <div class="columns is-vcentered">
+      <div class="column is-7">
+        <h2 class="title is-3">3‑Minute Overview</h2>
+        <div class="video-16by9">
+          <!-- Replace the poster and video path with your overview asset -->
+          <video id="overview-video" class="lazy-video" controls muted playsinline preload="metadata" poster="./static/images/overview_poster.jpg">
+            <source data-src="./static/videos/overview.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <!-- <p class="help is-size-7">Tip: keep this under ~30 MB for fast loads (H.264 + AAC, 720p is enough).</p> -->
+      </div>
+      <div class="column is-5">
+        <div class="box">
+          <p class="title is-5">Abstract</p>
+          <p class="content is-size-6">
+            Multi-agent systems in the real-world (e.g., drone swarms, autonomous cars, warehouse robots) must satisfy rich, temporal tasks while avoiding collisions. Signal Temporal Logic (STL) elegantly encodes such objectives, but current STL planning methods face critical limitations. State-of-the-art optimization-based approaches can handle arbitrary STL specifications but struggle with scalability, becoming computationally impractical as the number of agents grows. Learning-based methods efficiently handle a large number of agents with rapid planning times but fare poorly when deployment-time objectives differ from those used during training, and do not support planning tasks that require different specifications to be ascribed to different agents (i.e., heterogeneity). This fundamental trade-off between <em>generalizability</em> and <em>scalability</em> presents a significant challenge for realizing multi-agent STL planning algorithms in practice. To overcome this challenge, we introduce a new diffusion method for multi-agent planning with STL specifications. Using a differentiable approximation of STL, we integrate the STL gradient in the denoising process, making our approach generalizable to novel formulas constructed from a fixed set of predicates available at evaluation, while achieving the same scalability as existing learning-based methods. Our method supports heterogeneous specifications, and by using diffusion models, naturally enhances plan <em>diversity</em>, thereby significantly reducing safety-related violations (e.g., collisions) among agents. A detailed evaluation study justifies the utility of STL-guided diffusion-based multi-agent planners for constructing generalizable, scalable, and diverse plans.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- ===== Diffusion micro-loops (glanceable) ===== -->
+<div id="diffusion-microloops" class="columns is-mobile is-centered mt-4" aria-label="Diffusion process micro-clips">
+  <div class="column is-half-mobile is-one-quarter-tablet has-text-centered">
+    <figure class="figure-sm">
+      <div class="video-square">
+        <video class="micro-loop"
+               autoplay muted playsinline preload="auto"
+               data-loops="3"
+               poster="./static/images/micro/noise_to_plan_poster.jpg"
+               aria-label="Diffusion Process visualized for N=8 agents with heterogeneous tasks">
+          <source src="./static/videos/demo/diffusion_process/trimmed_n8_mseq3_edm_hetero_4x.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <p class="is-size-7 has-text-grey mt-2">Diffusion Process visualized for N=8 agents with heterogeneous tasks</p>
+    </figure>
+  </div>
+
+  <div class="column is-half-mobile is-one-quarter-tablet has-text-centered">
+    <figure class="figure-sm">
+      <div class="video-square">
+        <video class="micro-loop"
+               autoplay muted playsinline preload="auto"
+               data-loops="3"
+               poster="./static/images/micro/noise_to_plan_poster.jpg"
+               aria-label="Diffusion Process visualized for N=32 agents with heterogeneous tasks">
+          <source src="./static/videos/demo/diffusion_process/trimmed_n32_mseq3_edm_hetero_4x_w_diff.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <p class="is-size-7 has-text-grey mt-2">Diffusion Process visualized for N=32 agents with heterogeneous tasks</p>
+    </figure>
+  </div>
+</div>
+  </div>
+</section>
+
+<!-- ====== Real Robot Demo (20s) ====== -->
+<section id="real-demo" class="section">
+  <div class="container is-max-page">
+    <h2 class="title is-3 has-text-centered">Real‑World Demonstration</h2>
+    <p class="has-text-centered">Heterogeneous sequence demo with 3 goals on N=10 robots in the <a href="https://www.robotarium.gatech.edu/">Robotarium</a> testbench.</p>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="video-16by9">
+          <video id="realrobot-video" class="lazy-video" controls muted autoplay playsinline loop preload="metadata" poster="./static/images/realrobot_poster.jpg">
+            <!-- IMPORTANT: make sure this is a faststart MP4 (moov at front) -->
+            <source data-src="./static/videos/realrobot/realrobot_faststart.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Diversity Videos (2 tabs: 8 and 32 agents) ====== -->
+<section id="diversity" class="section">
+  <div class="container is-max-page">
+    <h2 class="title is-3 has-text-centered">Diversity Videos</h2>
+    <p class="is-size-7 has-text-grey has-text-centered">Note: These clips illustrate qualitative diversity across rollouts for the sequence specification for 3 goals with all agents following the same task (Homogeneous).</p>
+
+    <!-- Top-level tabs -->
+    <div class="tabs is-centered is-boxed" role="tablist" aria-label="Choose agent count">
+      <ul id="div-tabs">
+        <li class="is-active"><a role="tab" aria-selected="true" data-n="8">8&nbsp;Agents</a></li>
+        <li><a role="tab" aria-selected="false" data-n="32">32&nbsp;Agents</a></li>
+      </ul>
+    </div>
+
+    <!-- Tab panels -->
+    <div id="div-n8" class="div-panel">
+      <div class="columns is-multiline">
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">Diffusion</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n8-v1" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">GNN-ODE</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n8-v2" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">STLPY</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n8-v3" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="div-n32" class="div-panel is-hidden">
+      <div class="columns is-multiline">
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">Diffusion</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n32-v1" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">GNN-ODE</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n32-v2" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="card media-card">
+            <header class="card-header"><p class="card-header-title">STLPY</p></header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="div-n32-v3" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shared placeholder table below the videos -->
+    <p class="is-size-7 has-text-grey">N = number of agents; Spec abbreviations: Seq. = Sequence.</p>
+
+<h3 class="title is-5 mt-4">Diversity Metrics</h3>
+
+  <div class="content">
+      <details class="mt-4">
+      <summary><strong>How the metrics are computed</strong><span class="toggle-hint"></span></summary>
+      <div class="content">
+
+  <p><strong>Notation.</strong> We consider valid trajectories as polylines
+    $\tau_{s_i}=\{\mathbf{x}^{(i)}_t\}_{t=0}^{T-1}\subset\mathbb{R}^2$
+    for $M$ successful agents over $T$ steps.</p>
+
+  <h4 class="title is-6">Path Overlap (↓)</h4>
+  <p><em>Occupancy grid.</em> Overlay a uniform grid of resolution $r_{\text{grid}}=0.3\,\mathrm{m}$ on the workspace
+    $[x_{\min},x_{\max}]\times[y_{\min},y_{\max}]$ (e.g., $x_{\max}=y_{\max}=6$, $x_{\min}=y_{\min}=-0.5$).
+    For agent $i$, the binary occupancy mask is
+    \[
+      O^{(i)}_{u,v}=\mathbf{1}\!\left[(u,v)\in \text{cells}\bigl(\tau_{s_i}\bigr)\right].
+    \]
+    The (normalised) overlap among $M$ agents is
+    \[
+      \text{Overlap}
+      \;=\;
+      \frac{\displaystyle\sum_{u,v}\Bigl(\bigwedge_{i=1}^{M}O^{(i)}_{u,v}\Bigr)}
+           {\displaystyle\sum_{u,v}\Bigl(\bigvee_{i=1}^{M}O^{(i)}_{u,v}\Bigr) + \varepsilon},
+      \qquad \varepsilon=10^{-6},
+    \]
+    where $\wedge$/$\vee$ denote logical AND/OR over agents. $\text{Overlap}\!\approx\!1$ means identical footprints; $\approx\!0$ means disjoint footprints.
+  </p>
+
+  <h4 class="title is-6">Path Entropy (↑)</h4>
+  <p>From $O^{(i)}_{u,v}$ build the cumulative grid
+    \[
+      \mathrm{occ}_{u,v}=\sum_{i=1}^{M}\sum_{t=0}^{T-1}\mathbf{1}\!\left[(u,v)\in \text{cell}(\mathbf{x}^{(i)}_t)\right],
+    \]
+    and the visited set $\mathcal V=\{(u,v)\mid \mathrm{occ}_{u,v}>0\}$ with $V=|\mathcal V|$.
+    Define
+    \[
+      p_{u,v}=\frac{\mathrm{occ}_{u,v}}{\sum_{(a,b)\in\mathcal V}\mathrm{occ}_{a,b}},\quad (u,v)\in\mathcal V,
+    \]
+    and report the normalised Shannon entropy
+    \[
+      \hat H \;=\; -\frac{1}{\log V}\sum_{(u,v)\in\mathcal V} p_{u,v}\log p_{u,v}.
+    \]
+  </p>
+
+  <h4 class="title is-6">Pairwise Distance &amp; Cluster Statistics</h4>
+  <p><em>Distances.</em> For each pair $(i,j)$, compute the discrete Fréchet distance
+    $D_{ij}=d_F\!\bigl(\tau_{s_i},\tau_{s_j}\bigr)$, forming a symmetric matrix $D\in\mathbb{R}^{M\times M}$.
+    The mean pairwise distance (reported as “Mean Pairwise Dist. (↑)”) is
+    \[
+      \overline{D} \;=\; \frac{1}{M^2}\sum_{i=1}^{M}\sum_{j=1}^{M} D_{ij},
+    \]
+    where higher values indicate more separation among successful plans.
+  </p>
+  <p><em>Graph &amp; clusters.</em> Build an undirected graph $G=(V,E)$ with $V=\{1,\ldots,M\}$ and
+    \[
+      (i,j)\in E \;\Longleftrightarrow\; 0 < D_{ij}\le \Delta\tau,\quad \Delta\tau = 1\,\mathrm{m}.
+    \]
+    Let $\text{ConnComp}(G)$ be the connected components, $k=|\text{ConnComp}(G)|$, and $C_c$ a component.
+    We report:
+  </p>
+  <ul>
+    <li><strong>Num. Clusters (↑)</strong>: $k$ (larger $\Rightarrow$ more distinct route groups).</li>
+    <li><strong>Max Cluster Fraction (↓)</strong>: $\displaystyle\max_c |C_c|/M$ (smaller $\Rightarrow$ no single dominant route).</li>
+    <li><strong>Agents per Cluster (↓)</strong>: $\displaystyle \frac{1}{k}\sum_c |C_c|$ (smaller $\Rightarrow$ more evenly split).</li>
+  </ul>
+
+  <p class="is-size-7 has-text-grey">Legend: “↑” higher is better; “↓” lower is better. These metrics complement success/safety to characterise diversity.</p>
+</div>
+
+ </details>
+
+<div class="table-wrap">
+<table class="research" aria-label="Diversity metrics (Homogeneous, N=16,32)">
+  <caption>
+    All diversity metrics for $N=16, 32$ agents in the Homogeneous task setting.
+    D-MA: Diffusion-based Multi-Agent (Ours), G-O: GNN-ODE planner, STLPY: MILP planner.
+    Best results are in <strong>bold</strong>.
+  </caption>
+  <thead>
+    <tr>
+      <th rowspan="2"><strong>Spec</strong></th>
+      <th rowspan="2"><strong>N</strong></th>
+      <th colspan="3"><strong>Agents per Cluster (↓)</strong></th>
+      <th colspan="3"><strong>Max Cluster Fraction (↓)</strong></th>
+      <th colspan="3"><strong>Mean Pairwise Dist. (↑)</strong></th>
+      <th colspan="3"><strong>Num Clusters (↑)</strong></th>
+      <th colspan="3"><strong>Path Entropy (↑)</strong></th>
+      <th colspan="3"><strong>Path Overlap (↓)</strong></th>
+    </tr>
+    <tr>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>G-O</strong></th><th><strong>STLPY</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="2">Branch</td>
+      <td>16</td>
+      <td><strong>1.09</strong></td><td>3.81</td><td>2.35</td>
+      <td><strong>0.12</strong></td><td>0.56</td><td>0.33</td>
+      <td><strong>2.63</strong></td><td>2.10</td><td>2.33</td>
+      <td><strong>14.67</strong></td><td>4.20</td><td>6.80</td>
+      <td><strong>0.93</strong></td><td>0.88</td><td><strong>0.93</strong></td>
+      <td><strong>0.00</strong></td><td>0.08</td><td><strong>0.00</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>1.03</strong></td><td>6.58</td><td>4.10</td>
+      <td><strong>0.04</strong></td><td>0.79</td><td>0.20</td>
+      <td><strong>3.43</strong></td><td>2.35</td><td>2.35</td>
+      <td><strong>31.10</strong></td><td>4.87</td><td>7.80</td>
+      <td>0.90</td><td>0.86</td><td><strong>0.92</strong></td>
+      <td><strong>0.00</strong></td><td><strong>0.00</strong></td><td><strong>0.00</strong></td>
+    </tr>
+
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="2">Cover</td>
+      <td>16</td>
+      <td><strong>1.08</strong></td><td>6.40</td><td>3.02</td>
+      <td><strong>0.12</strong></td><td>0.81</td><td>0.47</td>
+      <td><strong>2.64</strong></td><td>1.76</td><td>2.11</td>
+      <td><strong>14.87</strong></td><td>2.50</td><td>5.30</td>
+      <td><strong>0.92</strong></td><td>0.87</td><td>0.91</td>
+      <td><strong>0.00</strong></td><td>0.18</td><td><strong>0.00</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>1.03</strong></td><td>11.71</td><td>6.27</td>
+      <td><strong>0.04</strong></td><td>0.91</td><td>0.32</td>
+      <td><strong>3.43</strong></td><td>1.78</td><td>2.09</td>
+      <td><strong>31.13</strong></td><td>2.73</td><td>5.10</td>
+      <td>0.90</td><td>0.85</td><td><strong>0.91</strong></td>
+      <td><strong>0.00</strong></td><td><strong>0.00</strong></td><td><strong>0.00</strong></td>
+    </tr>
+
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="2">Loop</td>
+      <td>16</td>
+      <td><strong>1.04</strong></td><td>4.40</td><td>3.40</td>
+      <td><strong>0.09</strong></td><td>0.64</td><td>0.58</td>
+      <td><strong>2.43</strong></td><td>1.83</td><td>1.82</td>
+      <td><strong>15.33</strong></td><td>3.63</td><td>4.70</td>
+      <td><strong>0.90</strong></td><td>0.83</td><td>0.89</td>
+      <td><strong>0.00</strong></td><td>8.72</td><td>0.27</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>1.26</strong></td><td>10.00</td><td>5.33</td>
+      <td><strong>0.04</strong></td><td>0.86</td><td>0.41</td>
+      <td><strong>2.23</strong></td><td>1.83</td><td>1.85</td>
+      <td><strong>25.30</strong></td><td>3.20</td><td>6.00</td>
+      <td><strong>0.87</strong></td><td>0.79</td><td><strong>0.87</strong></td>
+      <td>0.20</td><td>2.41</td><td><strong>0.00</strong></td>
+    </tr>
+
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="2">Seq.</td>
+      <td>16</td>
+      <td><strong>1.08</strong></td><td>7.74</td><td>2.89</td>
+      <td><strong>0.11</strong></td><td>0.85</td><td>0.41</td>
+      <td><strong>2.40</strong></td><td>1.32</td><td>2.34</td>
+      <td><strong>14.87</strong></td><td>2.07</td><td>5.53</td>
+      <td><strong>0.93</strong></td><td>0.90</td><td>0.85</td>
+      <td><strong>0.00</strong></td><td>0.25</td><td>12.42</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>1.45</strong></td><td>18.82</td><td>32.00</td>
+      <td><strong>0.20</strong></td><td>0.86</td><td>0.25</td>
+      <td><strong>2.24</strong></td><td>0.75</td><td>0.94</td>
+      <td><strong>22.07</strong></td><td>1.70</td><td>1.00</td>
+      <td>0.91</td><td>0.90</td><td><strong>0.94</strong></td>
+      <td><strong>0.00</strong></td><td><strong>0.00</strong></td><td>3.66</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+  </div>
+
+  </div>
+</section>
+
+
+<!-- ====== Environments (3 tabs) ====== -->
+<section id="envs" class="section">
+  <div class="container is-max-page">
+    <h2 class="title is-3 has-text-centered">Simulation Videos</h2>
+
+    <!-- ===== Top-level environment tabs ===== -->
+    <div class="tabs is-centered is-boxed" role="tablist" aria-label="Choose environment">
+      <ul id="env-tabs">
+        <li><a role="tab" aria-selected="false" data-env="DoubleIntegrator">Double&nbsp;Integrator</a></li>
+        <li class="is-active"><a role="tab" aria-selected="true" data-env="DubinsCar">Dubins&nbsp;Car</a></li>
+        <li><a role="tab" aria-selected="false" data-env="SingleIntegrator">Single&nbsp;Integrator</a></li>
+      </ul>
+    </div>
+
+    <!-- ===== Environment sections (one visible at a time) ===== -->
+    <div id="env-DoubleIntegrator" class="env-section is-hidden">
+      <div class="level">
+        <div class="level-left">
+          <h2 class="title is-4">Double Integrator</h2>
+        </div>
+        <div class="level-right">
+          <div class="field is-grouped is-align-items-center">
+            <label class="label mr-2 mb-0">Agents</label>
+            <div class="control" aria-label="Choose number of agents">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-agents="8" data-env="DoubleIntegrator" role="tab" aria-selected="true">8</button>
+                <button class="mini-tab" data-agents="16" data-env="DoubleIntegrator" role="tab" aria-selected="false">16</button>
+                <button class="mini-tab" data-agents="32" data-env="DoubleIntegrator" role="tab" aria-selected="false">32</button>
+              </div>
+            </div>
+            <div class="control ml-4" aria-label="Obstacle toggle">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-obs="no" data-env="DoubleIntegrator" role="tab" aria-selected="true">No Obstacles</button>
+                <button class="mini-tab" data-obs="yes" data-env="DoubleIntegrator" role="tab" aria-selected="false">Obstacles</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Method cards (Diffusion / STLPY) for the active agent group -->
+      <div class="columns is-multiline">
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">Diffusion <span class="dim" id="label-di-agt"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-DoubleIntegrator-diffusion" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">STLPY <span class="dim" id="label-di-agt-2"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-DoubleIntegrator-stlpy" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+  <h3 class="title is-5">Environment Details &amp; Dynamics</h3>
+
+  <p><em>Global setting.</em> All simulations use a uniform time step of $\delta t = 0.03$.</p>
+  <p>
+    State: $x_i=\bigl[p_i^x,\, p_i^y,\, v_i^x,\, v_i^y\bigr]^\top$; control: $u_i=\bigl[a_i^x,\, a_i^y\bigr]^\top$.
+  </p>
+  <p>Continuous-time dynamics:
+    \[
+      \dot{x}_i \;=\; \bigl[v_i^x,\, v_i^y,\, a_i^x,\, a_i^y\bigr]^\top,
+    \]
+    with relative state $e_{ij}=x_j-x_i$ for interaction features.
+  </p>
+</div>
+
+      <details class="mt-4" open>
+  <summary><strong>Double Integrator — Results</strong><span class="toggle-hint"></span></summary>
+<p class="is-size-7 has-text-grey">Note: Obs column — N = no obstacles, Y = with obstacles. TtR = mean time-to-reach (steps).</p>
+
+<div class="table-wrap">
+<table class="research" aria-label="Double Integrator (Heterogeneous) — Results">
+  <caption>
+    All results for the DoubleIntegrator environment (Heterogeneous specs; $N\in\{8,16,32\}$).
+    D-MA: Diffusion-based Multi-Agent (Ours), STLPY: MILP planner.
+    Best results are in <strong>bold</strong>.
+  </caption>
+  <thead>
+    <tr>
+      <th rowspan="2"><strong>Spec</strong></th>
+      <th rowspan="2"><strong>Obs</strong></th>
+      <th rowspan="2"><strong>N</strong></th>
+      <th colspan="2"><strong>Planning Time (s) (↓)</strong></th>
+      <th colspan="2"><strong>Success Rate (↑)</strong></th>
+      <th colspan="2"><strong>TtR (↓)</strong></th>
+    </tr>
+    <tr>
+      <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Branch -->
+    <tr>
+      <td rowspan="6">Branch</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>0.56</strong></td><td>11.28</td>
+      <td><strong>100.00</strong></td><td>92.50</td>
+      <td>1317.54</td><td><strong>1203.60</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>1.52</strong></td><td>19.30</td>
+      <td><strong>100.00</strong></td><td>95.62</td>
+      <td>1498.84</td><td><strong>1009.62</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>19.95</strong></td><td>38.53</td>
+      <td><strong>98.85</strong></td><td>90.31</td>
+      <td>1912.65</td><td><strong>1469.74</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td><strong>0.57</strong></td><td>9.91</td>
+      <td><strong>97.92</strong></td><td>85.00</td>
+      <td>1466.51</td><td><strong>1136.44</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>0.93</strong></td><td>19.32</td>
+      <td><strong>98.75</strong></td><td>88.12</td>
+      <td>1686.29</td><td><strong>1203.41</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>2.17</strong></td><td>39.47</td>
+      <td><strong>97.60</strong></td><td>83.75</td>
+      <td>1940.35</td><td><strong>1458.93</strong></td>
+    </tr>
+
+    <!-- Cover -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Cover</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>1.49</strong></td><td>8.03</td>
+      <td><strong>99.58</strong></td><td>92.50</td>
+      <td>1360.39</td><td><strong>926.76</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>9.82</strong></td><td>16.40</td>
+      <td><strong>98.75</strong></td><td>95.00</td>
+      <td>1578.78</td><td><strong>1247.36</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>40.33</td><td><strong>33.23</strong></td>
+      <td><strong>89.69</strong></td><td>82.19</td>
+      <td>1914.50</td><td><strong>1347.15</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td><strong>1.56</strong></td><td>8.31</td>
+      <td><strong>98.75</strong></td><td>85.00</td>
+      <td>1389.64</td><td><strong>1177.51</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>2.28</strong></td><td>16.55</td>
+      <td><strong>96.88</strong></td><td>87.50</td>
+      <td>1607.36</td><td><strong>1268.25</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>4.43</strong></td><td>32.81</td>
+      <td><strong>87.81</strong></td><td>76.88</td>
+      <td>1908.44</td><td><strong>1343.73</strong></td>
+    </tr>
+
+    <!-- Loop -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Loop</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>3.92</strong></td><td>49.29</td>
+      <td><strong>95.83</strong></td><td>92.50</td>
+      <td>2070.63</td><td><strong>1817.73</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>7.29</strong></td><td>100.19</td>
+      <td><strong>96.04</strong></td><td>92.50</td>
+      <td>2548.74</td><td><strong>2030.55</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>13.77</strong></td><td>197.32</td>
+      <td><strong>93.65</strong></td><td>91.25</td>
+      <td>3135.92</td><td><strong>2961.40</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td><strong>3.95</strong></td><td>49.58</td>
+      <td><strong>92.92</strong></td><td>87.50</td>
+      <td>2315.57</td><td><strong>1871.11</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>7.52</strong></td><td>100.53</td>
+      <td><strong>93.54</strong></td><td>88.12</td>
+      <td>2379.24</td><td><strong>2097.43</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>14.43</strong></td><td>196.92</td>
+      <td><strong>90.21</strong></td><td>83.75</td>
+      <td>3124.32</td><td><strong>3058.88</strong></td>
+    </tr>
+
+    <!-- Seq. -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Seq.</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>1.83</strong></td><td>4.10</td>
+      <td><strong>99.58</strong></td><td>92.50</td>
+      <td>1740.11</td><td><strong>1431.82</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>7.88</strong></td><td>8.01</td>
+      <td><strong>98.96</strong></td><td>93.12</td>
+      <td>1833.66</td><td><strong>1626.01</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>31.89</td><td><strong>16.28</strong></td>
+      <td><strong>90.21</strong></td><td>70.94</td>
+      <td>2351.66</td><td><strong>1852.80</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td><strong>2.03</strong></td><td>3.98</td>
+      <td><strong>96.25</strong></td><td>82.50</td>
+      <td>1580.93</td><td><strong>1234.13</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>2.54</strong></td><td>7.97</td>
+      <td><strong>96.04</strong></td><td>83.75</td>
+      <td>1834.80</td><td><strong>1780.33</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>4.42</strong></td><td>15.81</td>
+      <td><strong>85.73</strong></td><td>66.25</td>
+      <td>2324.78</td><td><strong>1850.46</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+</details>
+    </div>
+
+    <div id="env-DubinsCar" class="env-section">
+      <div class="level">
+        <div class="level-left">
+          <h2 class="title is-4">Dubins Car</h2>
+        </div>
+        <div class="level-right">
+          <div class="field is-grouped is-align-items-center">
+            <label class="label mr-2 mb-0">Agents</label>
+            <div class="control" aria-label="Choose number of agents">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-agents="8" data-env="DubinsCar" role="tab" aria-selected="true">8</button>
+                <button class="mini-tab" data-agents="16" data-env="DubinsCar" role="tab" aria-selected="false">16</button>
+                <button class="mini-tab" data-agents="32" data-env="DubinsCar" role="tab" aria-selected="false">32</button>
+              </div>
+            </div>
+            <div class="control ml-4" aria-label="Obstacle toggle">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-obs="no" data-env="DubinsCar" role="tab" aria-selected="true">No Obstacles</button>
+                <button class="mini-tab" data-obs="yes" data-env="DubinsCar" role="tab" aria-selected="false">Obstacles</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-multiline">
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">Diffusion <span class="dim" id="label-dc-agt"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-DubinsCar-diffusion" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">STLPY <span class="dim" id="label-dc-agt-2"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-DubinsCar-stlpy" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+  <h3 class="title is-5">Environment Details &amp; Dynamics</h3>
+
+  <p><em>Global setting.</em> All simulations use a uniform time step of $\delta t = 0.03$.</p>
+  <p>
+    State of agent $i$: $x_i = \bigl[p_i^x,\, p_i^y,\, \theta_i,\, v_i\bigr]^\top$.
+    Control input: $u_i = \bigl[\omega_i,\, a_i\bigr]^\top$ (angular rate and linear acceleration magnitude).
+  </p>
+  <p>Continuous-time dynamics:
+    \[
+      \dot x_i \;=\; \bigl[v_i \cos\theta_i,\; v_i \sin\theta_i,\; \omega_i,\; a_i\bigr]^\top.
+    \]
+    For interaction features we use $e_{ij}=e_j(x_j)-e_i(x_i)$ with
+    \[
+      e_i(x_i)=\bigl[p_i^x,\; p_i^y,\; v_i\cos\theta_i,\; v_i\sin\theta_i\bigr]^\top.
+    \]
+  </p>
+</div>
+      <details class="mt-4" open>
+  <summary><strong>Dubins Car — Results</strong><span class="toggle-hint"></span></summary>
+<p class="is-size-7 has-text-grey">Note: Obs column — N = no obstacles, Y = with obstacles. TtR = mean time-to-reach (steps).</p>
+<div class="table-wrap">
+<table id="dubins-car-results" class="research" aria-label="Dubins Car (Heterogeneous) — Results">
+  <caption>
+    All results for the Dubins Car environment (Heterogeneous specs; $N\in\{8,16,32\}$).
+    D-MA: Diffusion-based Multi-Agent (Ours), D-SA: Diffusion-based Single-Agent, STLPY: MILP planner.
+    Best results are in <strong>bold</strong>.
+  </caption>
+  <thead>
+    <tr>
+      <th rowspan="2"><strong>Spec</strong></th>
+      <th rowspan="2"><strong>Obs</strong></th>
+      <th rowspan="2"><strong>N</strong></th>
+      <th colspan="3"><strong>Planning Time (s) (↓)</strong></th>
+      <th colspan="3"><strong>Success Rate (↑)</strong></th>
+      <th colspan="3"><strong>TtR (↓)</strong></th>
+    </tr>
+    <tr>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Branch -->
+    <tr>
+      <td rowspan="6">Branch</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>0.20</strong></td><td>0.54</td><td>8.61</td>
+      <td><strong>100.00</strong></td><td>97.50</td><td>97.50</td>
+      <td>1327.00</td><td>1237.50</td><td><strong>746.07</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.79</td><td><strong>0.33</strong></td><td>18.81</td>
+      <td><strong>99.38</strong></td><td>87.92</td><td>90.00</td>
+      <td>1252.00</td><td>1322.37</td><td><strong>832.75</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>2.10</td><td><strong>0.68</strong></td><td>43.80</td>
+      <td><strong>93.12</strong></td><td>65.00</td><td>68.65</td>
+      <td>1453.71</td><td>1579.60</td><td><strong>1216.69</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>0.27</td><td><strong>0.22</strong></td><td>11.49</td>
+      <td><strong>95.00</strong></td><td>90.42</td><td>83.75</td>
+      <td>1334.66</td><td>1234.21</td><td><strong>670.08</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.84</td><td><strong>0.31</strong></td><td>22.30</td>
+      <td><strong>90.62</strong></td><td>82.50</td><td>78.12</td>
+      <td>1341.26</td><td>1327.89</td><td><strong>1045.21</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>2.26</td><td><strong>0.46</strong></td><td>44.12</td>
+      <td><strong>87.19</strong></td><td>55.00</td><td>66.88</td>
+      <td>1753.57</td><td>1620.55</td><td><strong>998.40</strong></td>
+    </tr>
+
+    <!-- Cover -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Cover</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>0.42</strong></td><td>1.22</td><td>7.24</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td>97.50</td>
+      <td>1514.21</td><td>1430.00</td><td><strong>997.07</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.24</td><td><strong>0.62</strong></td><td>14.19</td>
+      <td><strong>98.75</strong></td><td>86.67</td><td>92.50</td>
+      <td>1452.65</td><td>1373.83</td><td><strong>1090.52</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>3.55</td><td><strong>1.11</strong></td><td>28.56</td>
+      <td><strong>90.31</strong></td><td>60.62</td><td>72.50</td>
+      <td>1553.56</td><td>1604.45</td><td><strong>1286.58</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>0.83</td><td><strong>0.42</strong></td><td>9.12</td>
+      <td><strong>90.00</strong></td><td>87.08</td><td>85.00</td>
+      <td>1599.75</td><td>1246.25</td><td><strong>854.22</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.38</td><td><strong>0.58</strong></td><td>18.37</td>
+      <td><strong>90.00</strong></td><td>79.38</td><td>80.62</td>
+      <td>1659.24</td><td>1382.99</td><td><strong>1141.86</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>4.14</td><td><strong>0.81</strong></td><td>37.35</td>
+      <td><strong>82.50</strong></td><td>55.42</td><td>62.81</td>
+      <td>1591.70</td><td>1638.02</td><td><strong>1097.58</strong></td>
+    </tr>
+
+    <!-- Loop -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Loop</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>0.84</strong></td><td>5.07</td><td>45.45</td>
+      <td><strong>97.50</strong></td><td>90.00</td><td>95.00</td>
+      <td>2224.92</td><td>2313.10</td><td><strong>1708.86</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>3.18</td><td><strong>2.48</strong></td><td>91.60</td>
+      <td><strong>96.25</strong></td><td>87.50</td><td>82.50</td>
+      <td>2307.25</td><td>2338.47</td><td><strong>1839.81</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>6.36</td><td><strong>2.98</strong></td><td>244.22</td>
+      <td><strong>82.19</strong></td><td>67.81</td><td>53.85</td>
+      <td>2316.42</td><td>2730.77</td><td><strong>2010.56</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td><strong>0.84</strong></td><td>1.80</td><td>60.62</td>
+      <td><strong>87.92</strong></td><td>83.33</td><td>72.50</td>
+      <td>2625.00</td><td>2167.89</td><td><strong>1795.36</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><strong>1.42</strong></td><td>2.55</td><td>126.32</td>
+      <td><strong>85.00</strong></td><td>80.83</td><td>73.75</td>
+      <td>2511.69</td><td>2386.08</td><td><strong>1880.43</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td><strong>2.19</strong></td><td>2.98</td><td>240.85</td>
+      <td><strong>71.04</strong></td><td>61.98</td><td>43.75</td>
+      <td>2858.89</td><td>2837.73</td><td><strong>2101.98</strong></td>
+    </tr>
+
+    <!-- Seq. -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Seq.</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td><strong>0.27</strong></td><td>0.33</td><td>2.44</td>
+      <td><strong>100.00</strong></td><td>97.50</td><td><strong>100.00</strong></td>
+      <td>1887.00</td><td>1466.14</td><td><strong>1277.50</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.25</td><td><strong>0.61</strong></td><td>4.73</td>
+      <td><strong>98.75</strong></td><td>87.50</td><td>77.50</td>
+      <td><strong>1694.25</strong></td><td>1805.62</td><td>1705.25</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>1.05</td><td><strong>0.66</strong></td><td>9.76</td>
+      <td><strong>81.25</strong></td><td>49.27</td><td>46.88</td>
+      <td>2041.64</td><td>2051.86</td><td><strong>1824.10</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>0.43</td><td><strong>0.32</strong></td><td>4.59</td>
+      <td><strong>87.92</strong></td><td>85.42</td><td>76.25</td>
+      <td>1676.99</td><td>1727.93</td><td><strong>1295.20</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.87</td><td><strong>0.42</strong></td><td>9.08</td>
+      <td><strong>88.75</strong></td><td>75.62</td><td>68.75</td>
+      <td>1878.02</td><td>1747.22</td><td><strong>1529.92</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>4.75</td><td><strong>0.68</strong></td><td>18.86</td>
+      <td><strong>71.25</strong></td><td>42.19</td><td>41.88</td>
+      <td>1843.99</td><td>2022.89</td><td><strong>1799.16</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+</details>
+    </div>
+
+    <div id="env-SingleIntegrator" class="env-section is-hidden">
+      <div class="level">
+        <div class="level-left">
+          <h2 class="title is-4">Single Integrator</h2>
+        </div>
+        <div class="level-right">
+          <div class="field is-grouped is-align-items-center">
+            <label class="label mr-2 mb-0">Agents</label>
+            <div class="control" aria-label="Choose number of agents">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-agents="8" data-env="SingleIntegrator" role="tab" aria-selected="true">8</button>
+                <button class="mini-tab" data-agents="16" data-env="SingleIntegrator" role="tab" aria-selected="false">16</button>
+                <button class="mini-tab" data-agents="32" data-env="SingleIntegrator" role="tab" aria-selected="false">32</button>
+              </div>
+            </div>
+            <div class="control ml-4" aria-label="Obstacle toggle">
+              <div class="mini-tabs" role="tablist">
+                <button class="mini-tab is-active" data-obs="no" data-env="SingleIntegrator" role="tab" aria-selected="true">No Obstacles</button>
+                <button class="mini-tab" data-obs="yes" data-env="SingleIntegrator" role="tab" aria-selected="false">Obstacles</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-multiline">
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">Diffusion <span class="dim" id="label-si-agt"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-SingleIntegrator-diffusion" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-half">
+          <div class="card media-card">
+            <header class="card-header">
+              <p class="card-header-title">STLPY <span class="dim" id="label-si-agt-2"></span></p>
+            </header>
+            <div class="card-content">
+              <div class="video-square">
+                <video id="vid-SingleIntegrator-stlpy" controls muted playsinline preload="metadata"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+  <h3 class="title is-5">Environment Details &amp; Dynamics</h3>
+
+  <p><em>Global setting.</em> All simulations use a uniform time step of $\delta t = 0.03$.</p>
+  <p>
+    State: $x_i=\bigl[p_i^x,\, p_i^y\bigr]^\top$; action is velocity $v_i=\bigl[v_i^x,\, v_i^y\bigr]^\top$.
+  </p>
+  <p>Continuous-time dynamics:
+    \[
+      \dot{x}_i \;=\; v_i.
+    \]
+    Relative position $e_{ij}=x_j-x_i$ is used as the edge feature for interactions.
+  </p>
+</div>
+
+      <details class="mt-4" open>
+  <summary><strong>Single Integrator — Results</strong><span class="toggle-hint"></span></summary>
+<p class="is-size-7 has-text-grey">Note: Obs column — N = no obstacles, Y = with obstacles. TtR = mean time-to-reach (steps).</p>
+
+<div class="table-wrap">
+<table class="research" aria-label="Single Integrator (Heterogeneous) — Results">
+  <caption>
+    All results for the SingleIntegrator environment (Heterogeneous specs; $N\in\{8,16,32\}$).
+    D-MA: Diffusion-based Multi-Agent (Ours), D-SA: Diffusion-based Single-Agent, STLPY: MILP planner.
+    Best results are in <strong>bold</strong>.
+  </caption>
+  <thead>
+    <tr>
+      <th rowspan="2"><strong>Spec</strong></th>
+      <th rowspan="2"><strong>Obs</strong></th>
+      <th rowspan="2"><strong>N</strong></th>
+      <th colspan="3"><strong>Planning Time (s) (↓)</strong></th>
+      <th colspan="3"><strong>Success Rate (↑)</strong></th>
+      <th colspan="3"><strong>TtR (↓)</strong></th>
+    </tr>
+    <tr>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+      <th><strong>D-MA</strong></th><th><strong>D-SA</strong></th><th><strong>STLPY</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Branch -->
+    <tr>
+      <td rowspan="6">Branch</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td>0.46</td><td><strong>0.27</strong></td><td>9.79</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td>92.50</td>
+      <td>1288.88</td><td>1107.45</td><td><strong>498.36</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.35</td><td><strong>0.29</strong></td><td>19.37</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td>95.62</td>
+      <td>1123.75</td><td>1165.91</td><td><strong>536.30</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>4.62</td><td><strong>0.31</strong></td><td>38.12</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td>96.25</td>
+      <td>1633.31</td><td>1309.40</td><td><strong>531.44</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>0.54</td><td><strong>0.27</strong></td><td>9.93</td>
+      <td><strong>94.17</strong></td><td>89.58</td><td>81.25</td>
+      <td>1234.49</td><td>1489.94</td><td><strong>665.80</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.73</td><td><strong>0.30</strong></td><td>19.29</td>
+      <td><strong>93.54</strong></td><td>90.00</td><td>85.62</td>
+      <td>1323.92</td><td>1549.64</td><td><strong>709.70</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>1.07</td><td><strong>0.31</strong></td><td>38.62</td>
+      <td><strong>92.81</strong></td><td>91.67</td><td>87.19</td>
+      <td>1778.98</td><td>1677.16</td><td><strong>734.18</strong></td>
+    </tr>
+
+    <!-- Cover -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Cover</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td>0.43</td><td><strong>0.29</strong></td><td>8.08</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1115.27</td><td>1117.58</td><td><strong>564.79</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.81</td><td><strong>0.44</strong></td><td>16.23</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1176.00</td><td>1429.29</td><td><strong>593.31</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>7.21</td><td><strong>0.47</strong></td><td>33.03</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1477.85</td><td>1583.75</td><td><strong>900.85</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>0.42</td><td><strong>0.31</strong></td><td>8.18</td>
+      <td><strong>92.92</strong></td><td>85.83</td><td>81.25</td>
+      <td>1430.52</td><td>1479.96</td><td><strong>853.77</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.62</td><td><strong>0.43</strong></td><td>16.45</td>
+      <td><strong>92.29</strong></td><td>88.12</td><td>85.62</td>
+      <td>1529.05</td><td>1540.77</td><td><strong>887.44</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>1.09</td><td><strong>0.47</strong></td><td>32.89</td>
+      <td><strong>92.81</strong></td><td>89.90</td><td>88.12</td>
+      <td>1555.41</td><td>1448.32</td><td><strong>947.44</strong></td>
+    </tr>
+
+    <!-- Loop -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Loop</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td>3.98</td><td><strong>1.83</strong></td><td>53.08</td>
+      <td><strong>97.50</strong></td><td>96.25</td><td>92.50</td>
+      <td>1512.35</td><td>1699.71</td><td><strong>941.06</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>7.17</td><td><strong>2.40</strong></td><td>103.33</td>
+      <td><strong>97.50</strong></td><td>96.46</td><td>95.62</td>
+      <td>1915.74</td><td>1781.47</td><td><strong>998.75</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>12.54</td><td><strong>3.88</strong></td><td>214.74</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>2317.23</td><td>1695.50</td><td><strong>1118.85</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>3.77</td><td><strong>1.86</strong></td><td>52.86</td>
+      <td><strong>90.83</strong></td><td>81.25</td><td>78.75</td>
+      <td>1904.90</td><td>1856.04</td><td><strong>1233.15</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>7.31</td><td><strong>2.55</strong></td><td>105.73</td>
+      <td><strong>90.83</strong></td><td>86.67</td><td>81.88</td>
+      <td>1886.95</td><td>1952.12</td><td><strong>1119.33</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>12.76</td><td><strong>3.92</strong></td><td>218.89</td>
+      <td><strong>90.73</strong></td><td>87.19</td><td>84.38</td>
+      <td>2206.91</td><td>2154.67</td><td><strong>1423.70</strong></td>
+    </tr>
+
+    <!-- Seq. -->
+    <tr style="border-top: 2px solid #666;">
+      <td rowspan="6">Seq.</td>
+      <td rowspan="3">N</td>
+      <td>8</td>
+      <td>0.70</td><td><strong>0.43</strong></td><td>4.02</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1485.80</td><td>1205.51</td><td><strong>669.49</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>4.76</td><td><strong>0.50</strong></td><td>7.95</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1271.25</td><td>1289.96</td><td><strong>693.78</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>24.75</td><td><strong>0.66</strong></td><td>16.27</td>
+      <td><strong>100.00</strong></td><td><strong>100.00</strong></td><td><strong>100.00</strong></td>
+      <td>1602.76</td><td>1493.86</td><td><strong>815.63</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="3">Y</td>
+      <td>8</td>
+      <td>1.25</td><td><strong>0.45</strong></td><td>4.11</td>
+      <td><strong>91.67</strong></td><td>89.58</td><td>81.25</td>
+      <td>1573.66</td><td>1715.81</td><td><strong>947.60</strong></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>1.81</td><td><strong>0.50</strong></td><td>8.12</td>
+      <td><strong>93.33</strong></td><td>88.75</td><td>83.12</td>
+      <td>1721.08</td><td>1824.43</td><td><strong>1006.02</strong></td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>3.35</td><td><strong>0.64</strong></td><td>16.39</td>
+      <td><strong>91.77</strong></td><td>87.50</td><td>80.94</td>
+      <td>2243.08</td><td>1988.05</td><td><strong>1387.37</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+</details>
+    </div>
+
+  </div>
+</section>
+
+
+
+
+
+<section id="supplementary" class="section">
+  <div class="container is-max-page">
+    <h2 class="title is-3 has-text-centered">Supplementary Tables</h2>
+    <!-- <p class="has-text-centered">Two or three additional tables that don't fit in the main paper.</p> -->
+
+    <details open>
+      <summary><strong>Hyperparameters</strong><span class="toggle-hint"></span></summary>
+      <div class="table-wrap">
+<table class="research" aria-label="Hyperparameters">
+  <caption>Hyperparameters used in the experiments.</caption>
+  <thead>
+    <tr>
+      <th><strong>Hparam.</strong></th>
+      <th><strong>Value</strong></th>
+      <th><strong>Description</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td colspan="3"><strong>Diffusion Parameters</strong></td></tr>
+    <tr><td>\(N_{\text{diff}}\)</td><td>256</td><td>Number of diffusion steps.</td></tr>
+    <tr><td>\(\lambda_{\text{STL}}\)</td><td>1.0</td><td>Weight for the STL loss.</td></tr>
+    <tr><td>\(\lambda_{\text{ach}}\)</td><td>0.1</td><td>Weight for the achievable loss.</td></tr>
+    <tr><td>\(N_{\text{sample}}\)</td><td>40</td><td>Max. number of plan resamples.</td></tr>
+    <tr>
+      <td>\(k_{\text{ach}}\)</td>
+      <td>0.1</td>
+      <td>Fraction of diffusion steps<br/>to compute achievable loss.</td>
+    </tr>
+    <tr><td>\(\epsilon_{\text{resample}}\)</td><td>0.1</td><td>Min. STL loss for resampling.</td></tr>
+    <tr><td>\(\sigma_{\max}\)</td><td>80</td><td>Maximum noise level.</td></tr>
+    <tr><td>\(\sigma_{\min}\)</td><td>0.002</td><td>Minimum noise level.</td></tr>
+
+    <tr><td colspan="3"><strong>Environment Parameters</strong></td></tr>
+    <tr><td>\(T^{\text{train}}_h\)</td><td>1000</td><td>Time horizon in training.</td></tr>
+    <tr><td>\(T^{\text{eval}}_h\)</td><td>3000</td><td>Time horizon in evaluation.</td></tr>
+
+    <tr><td colspan="3"><strong>Evaluation Parameters</strong></td></tr>
+    <tr><td>\(d_{\tau}\)</td><td>1.0</td><td>Distance threshold for clustering.</td></tr>
+    <tr><td>\(r_{\text{grid}}\)</td><td>0.3</td><td>Resolution for occupancy grid.</td></tr>
+  </tbody>
+</table>
+</div>
+    </details>
+
+<details>
+  <summary><strong>Dataset Coverage</strong><span class="toggle-hint"></span></summary>
+
+<div class="columns is-multiline is-mobile">
+  <div class="column is-half-mobile is-half-tablet is-half-desktop">
+      <div class="card media-card">
+        <header class="card-header">
+          <p class="card-header-title">
+            SingleIntegrator <span class="dim">Predicate Coverage</span>
+          </p>
+        </header>
+        <div class="card-content">
+          <figure class="image is-clickable" data-image="static/images/dataset/SingleIntegrator_N5000_20250427-035855dataset_percent_coverage_bar.png">
+            <img
+              src="static/images/dataset/SingleIntegrator_N5000_20250427-035855dataset_percent_coverage_bar.png"
+              alt="Predicate coverage for SingleIntegrator dataset"
+              loading="lazy"
+            />
+          </figure>
+          <p class="has-text-grey is-size-7 mt-2">
+            <strong>Top:</strong> Coverage of dataset over predicates (SingleIntegrator).
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- Right card -->
+    <div class="column is-half-mobile is-half-tablet is-half-desktop">
+      <div class="card media-card">
+        <header class="card-header">
+          <p class="card-header-title">
+            DubinsCar <span class="dim">Trajectory Samples</span>
+          </p>
+        </header>
+        <div class="card-content">
+          <figure class="image is-clickable" data-image="static/images/dataset/DubinsCar_N100_20250416-122614dataset_coverage.png">
+            <img
+              src="static/images/dataset/DubinsCar_N100_20250416-122614dataset_coverage.png"
+              alt="Example trajectories for DubinsCar dataset"
+              loading="lazy"
+            />
+          </figure>
+          <p class="has-text-grey is-size-7 mt-2">
+            <strong>Bottom:</strong> Visualizing a subset of dataset trajectories (DubinsCar).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+    <details class="mt-4">
+      <summary><strong>JIT Compilation &amp; Resampling</strong><span class="toggle-hint"></span></summary>
+      <div class="content">
+  <p><strong>JIT (XLA) compilation.</strong> We use JAX/XLA just‑in‑time compilation. The first call for a given planner/specification shape triggers a one‑time compile; subsequent evaluations reuse the compiled graph. We therefore <em>separate</em> this cost from the planning metrics and report it explicitly as “JIT Comp. Time (↓)”.</p>
+
+  <p><strong>Resampling.</strong> Our diffusion planner may resample candidate plans if the intermediate STL loss exceeds a threshold. Each resample iteration has approximately fixed runtime cost, but the <em>number</em> of resamples depends on the specification and number of agents. We therefore report “Num. Resampling (↓)” alongside other metrics.</p>
+
+  <p><strong>Achievable-loss ablation.</strong> We also include an ablation variant that removes the achievable loss term, denoted “D‑MA (No Ach.)”. This variant changes both compile costs (fewer STL constraints) and resampling behaviour.</p>
+
+  <p class="is-size-7 has-text-grey">Planning‑time results in the main tables exclude the one‑time JIT compile and report resampling counts separately for transparency.</p>
+</div>
+
+<div class="table-wrap">
+<table class="research" aria-label="Dubins Car — JIT compilation & resampling (Homogeneous)">
+  <caption>Compilation and Resampling times for the Dubins Car environment in the Homogeneous task setting. D‑MA: Diffusion‑based Multi‑Agent (Ours), D‑MA (No Ach.): ablation without achievable loss, D‑SA: Diffusion‑based Single‑Agent.</caption>
+  <thead>
+    <tr>
+      <th rowspan="2"><strong>Spec</strong></th>
+      <th rowspan="2"><strong>N</strong></th>
+      <th colspan="3"><strong>JIT Comp. Time (↓)</strong></th>
+      <th colspan="3"><strong>Num. Resampling (↓)</strong></th>
+    </tr>
+    <tr>
+      <th><strong>D‑MA</strong></th>
+      <th><strong>D‑MA (No Ach.)</strong></th>
+      <th><strong>D‑SA</strong></th>
+      <th><strong>D‑MA</strong></th>
+      <th><strong>D‑MA (No Ach.)</strong></th>
+      <th><strong>D‑SA</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3">Branch</td>
+      <td>8</td><td>74.24</td><td>18.24</td><td>7.79</td><td>1.12</td><td>1.00</td><td>1.00</td>
+    </tr>
+    <tr>
+      <td>16</td><td>87.83</td><td>16.64</td><td>9.79</td><td>1.06</td><td>1.00</td><td>1.00</td>
+    </tr>
+    <tr>
+      <td>32</td><td>120.41</td><td>39.78</td><td>12.45</td><td>1.06</td><td>1.00</td><td>1.47</td>
+    </tr>
+
+    <tr>
+      <td rowspan="3">Cover</td>
+      <td>8</td><td>32.25</td><td>10.70</td><td>6.04</td><td>1.00</td><td>1.12</td><td>1.50</td>
+    </tr>
+    <tr>
+      <td>16</td><td>79.92</td><td>15.07</td><td>7.20</td><td>1.12</td><td>1.12</td><td>2.25</td>
+    </tr>
+    <tr>
+      <td>32</td><td>71.00</td><td>23.48</td><td>8.73</td><td>1.03</td><td>1.00</td><td>2.47</td>
+    </tr>
+
+    <tr>
+      <td rowspan="3">Loop</td>
+      <td>8</td><td>130.08</td><td>73.77</td><td>22.52</td><td>1.88</td><td>1.88</td><td>6.38</td>
+    </tr>
+    <tr>
+      <td>16</td><td>184.14</td><td>131.98</td><td>30.35</td><td>1.81</td><td>1.81</td><td>7.06</td>
+    </tr>
+    <tr>
+      <td>32</td><td>287.68</td><td>96.92</td><td>42.36</td><td>3.12</td><td>3.06</td><td>6.91</td>
+    </tr>
+
+    <tr>
+      <td rowspan="3">Seq.</td>
+      <td>8</td><td>57.98</td><td>8.82</td><td>6.02</td><td>1.75</td><td>1.00</td><td>1.12</td>
+    </tr>
+    <tr>
+      <td>16</td><td>43.11</td><td>16.71</td><td>6.58</td><td>1.06</td><td>1.06</td><td>1.44</td>
+    </tr>
+    <tr>
+      <td>32</td><td>82.42</td><td>14.48</td><td>8.25</td><td>1.41</td><td>1.41</td><td>1.62</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+      </details>
+  </div>
+</section>
+
+<!-- ====== Footer ====== -->
+<footer class="footer">
+  <div class="content has-text-centered">
+    <p class="is-size-7">© 2026 Authors. This website is for research dissemination. Assets © respective owners.</p>
+  </div>
+</footer>
+
+<!-- ====== Scripts: Tabs, Agent Dropdowns, Lazy media, Lightbox ====== -->
+<script>
+  // === Video sources mapping using your provided file list ===
+  // Keys: env -> agents -> method -> {no, yes}
+  const videoMap = {
+    DoubleIntegrator: {
+      8: {
+        diffusion: {
+          no:  "static/videos/demo/DoubleIntegrator/n8_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n8_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+        stlpy: {
+          no:  "static/videos/demo/DoubleIntegrator/n8_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n8_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+      },
+      16: {
+        diffusion: {
+          no:  "static/videos/demo/DoubleIntegrator/n16_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n16_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+        stlpy: {
+          no:  "static/videos/demo/DoubleIntegrator/n16_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n16_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+      },
+      32: {
+        diffusion: {
+          no:  "static/videos/demo/DoubleIntegrator/n32_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n32_diffusion,15,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+        stlpy: {
+          no:  "static/videos/demo/DoubleIntegrator/n32_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+          yes: "static/videos/demo/DoubleIntegrator_obs/n32_stlpy,30,mseq3-m2branch2-mcover3-m2loop3.mp4",
+        },
+      }
+    },
+    DubinsCar: {
+      8: {
+        diffusion: { no: "static/videos/demo/DubinsCar/n8_diffusion,15,mseq3.mp4",  yes: "static/videos/demo/DubinsCar_obs/n8_diffusion,15,mseq3.mp4" },
+        stlpy:    { no: "static/videos/demo/DubinsCar/n8_stlpy,30,mseq3.mp4",       yes: "static/videos/demo/DubinsCar_obs/n8_stlpy,30,mseq3.mp4" },
+      },
+      16: {
+        diffusion: { no: "static/videos/demo/DubinsCar/n16_diffusion,15,mseq3.mp4", yes: "static/videos/demo/DubinsCar_obs/n16_diffusion,15,mseq3.mp4" },
+        stlpy:    { no: "static/videos/demo/DubinsCar/n16_stlpy,30,mseq3.mp4",      yes: "static/videos/demo/DubinsCar_obs/n16_stlpy,30,mseq3.mp4" },
+      },
+      32: {
+        diffusion: { no: "static/videos/demo/DubinsCar/n32_diffusion,15,mseq3.mp4", yes: "static/videos/demo/DubinsCar_obs/n32_diffusion,15,mseq3.mp4" },
+        stlpy:    { no: "static/videos/demo/DubinsCar/n32_stlpy,30,mseq3.mp4",      yes: "static/videos/demo/DubinsCar_obs/n32_stlpy,30,mseq3.mp4" },
+      },
+    },
+    SingleIntegrator: {
+      8: {
+        diffusion: { no: "static/videos/demo/SingleIntegrator/n8_diffusion,15,mcover3.mp4",  yes: "static/videos/demo/SingleIntegrator_obs/n8_diffusion,15,mcover3.mp4" },
+        stlpy:    { no: "static/videos/demo/SingleIntegrator/n8_stlpy,30,mcover3.mp4",       yes: "static/videos/demo/SingleIntegrator_obs/n8_stlpy,30,mcover3.mp4" },
+      },
+      16: {
+        diffusion: { no: "static/videos/demo/SingleIntegrator/n16_diffusion,15,mcover3.mp4", yes: "static/videos/demo/SingleIntegrator_obs/n16_diffusion,15,mcover3.mp4" },
+        stlpy:    { no: "static/videos/demo/SingleIntegrator/n16_stlpy,30,mcover3.mp4",      yes: "static/videos/demo/SingleIntegrator_obs/n16_stlpy,30,mcover3.mp4" },
+      },
+      32: {
+        diffusion: { no: "static/videos/demo/SingleIntegrator/n32_diffusion,15,mcover3.mp4", yes: "static/videos/demo/SingleIntegrator_obs/n32_diffusion,15,mcover3.mp4" },
+        stlpy:    { no: "static/videos/demo/SingleIntegrator/n32_stlpy,30,mcover3.mp4",      yes: "static/videos/demo/SingleIntegrator_obs/n32_stlpy,30,mcover3.mp4" },
+      },
+    },
+  };
+
+  // Map your diversity video files here (placeholders provided)
+  const diversityMap = {
+    8: [
+      "static/videos/demo/diversity/n8_seq3_edm-ma_homo_3x.mp4",
+      "static/videos/demo/diversity/n8_gnn_seq3_3x_homo.mp4",
+      "static/videos/demo/diversity/n8_stlpy_seq3_3x_homo.mp4",
+    ],
+    32: [
+      "static/videos/demo/diversity/n32_seq3_edm-ma_homo_3x.mp4",
+      "static/videos/demo/diversity/n32_gnn_seq3_3x_homo.mp4",
+      "static/videos/demo/diversity/n32_stlpy_seq3_3x_homo.mp4",
+    ],
+  };
+
+  function setDivVideoSrc(id, src) {
+    const v = document.getElementById(id);
+    if (!v || !src) return;
+    if (v.getAttribute('src') !== src) {
+      v.pause();
+      v.muted = true; v.autoplay = true; v.loop = true; v.playsInline = true;
+      v.setAttribute('src', src);
+      const onCanPlay = () => {
+        if (v.dataset.visible !== 'false') v.play().catch(()=>{});
+        v.removeEventListener('canplay', onCanPlay);
+      };
+      v.addEventListener('canplay', onCanPlay);
+      v.load();
+    }
+  }
+
+  function updateDiversity(n) {
+    const files = diversityMap[n] || [];
+    setDivVideoSrc(`div-n${n}-v1`, files[0]);
+    setDivVideoSrc(`div-n${n}-v2`, files[1]);
+    setDivVideoSrc(`div-n${n}-v3`, files[2]);
+  }
+
+  // Tab switching
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('#div-tabs a[data-n]');
+    if (!a) return;
+    const n = a.dataset.n;
+
+    // set tab state
+    document.querySelectorAll('#div-tabs li').forEach(li => li.classList.remove('is-active'));
+    a.parentElement.classList.add('is-active');
+    document.querySelectorAll('#div-tabs a').forEach(x => x.setAttribute('aria-selected', x === a ? 'true' : 'false'));
+
+    // show one panel
+    document.querySelectorAll('.div-panel').forEach(p => p.classList.add('is-hidden'));
+    const panel = document.getElementById(`div-n${n}`);
+    if (panel) panel.classList.remove('is-hidden');
+
+    // load & play
+    updateDiversity(n);
+  });
+
+  // Initial load: default to 8 agents
+  document.addEventListener('DOMContentLoaded', () => {
+    updateDiversity(8);
+  });
+
+
+  // Track current UI state per environment
+  const state = {
+    DoubleIntegrator: { agents: 8, obs: 'no' },
+    DubinsCar:        { agents: 8, obs: 'no' },
+    SingleIntegrator: { agents: 8, obs: 'no' },
+  };
+
+  // Helper to set source and load a video element
+  function setVideoSrc(videoEl, src) {
+    if (!videoEl) return;
+    const current = videoEl.getAttribute('src');
+    if (current !== src) {
+      videoEl.pause();
+      // make sure autoplay flags are set (defensive in case HTML attrs change)
+      videoEl.muted = true;
+      videoEl.autoplay = true;
+      videoEl.loop = true;
+
+      videoEl.setAttribute('src', src);
+      // kick a fresh load and play once we can (unless it is off-screen)
+      const onCanPlay = () => {
+        if (videoEl.dataset.visible !== 'false') {
+          videoEl.play().catch(() => {/* ignore autoplay blocks; video is muted so most browsers allow */});
+        }
+        videoEl.removeEventListener('canplay', onCanPlay);
+      };
+      videoEl.addEventListener('canplay', onCanPlay);
+      videoEl.load();
+    }
+  }
+
+  function updateLabels(envKey) {
+    const s = state[envKey];
+    const labelMap = {
+      DoubleIntegrator: ['label-di-agt', 'label-di-agt-2'],
+      DubinsCar: ['label-dc-agt', 'label-dc-agt-2'],
+      SingleIntegrator: ['label-si-agt', 'label-si-agt-2']
+    };
+    (labelMap[envKey] || []).forEach(id => {
+      const span = document.getElementById(id);
+      if (span) span.textContent = `| ${s.agents} agents · ${s.obs === 'yes' ? 'obstacles' : 'no obstacles'}`;
+    });
+  }
+
+  function updateEnvVideos(envKey) {
+    const s = state[envKey];
+    const map = videoMap[envKey]?.[s.agents];
+    if (!map) return;
+    // method: diffusion
+    const v1 = document.getElementById(`vid-${envKey}-diffusion`);
+    setVideoSrc(v1, map.diffusion[s.obs]);
+    // method: stlpy
+    const v2 = document.getElementById(`vid-${envKey}-stlpy`);
+    setVideoSrc(v2, map.stlpy[s.obs]);
+    updateLabels(envKey);
+  }
+
+  // Handle top-level environment tab clicks
+  document.getElementById('env-tabs').addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-env]');
+    if (!a) return;
+    const envKey = a.dataset.env;
+
+    // tabs active state
+    document.querySelectorAll('#env-tabs li').forEach(li => li.classList.remove('is-active'));
+    a.parentElement.classList.add('is-active');
+
+    // show/hide sections
+    document.querySelectorAll('.env-section').forEach(sec => sec.classList.add('is-hidden'));
+    const active = document.getElementById(`env-${envKey}`);
+    active.classList.remove('is-hidden');
+
+    // ensure videos reflect current state
+    updateEnvVideos(envKey);
+
+    // pause everything outside the active section
+    // pauseAllExcept(active);
+  });
+
+  // Handle agent segmented buttons (delegated)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button.mini-tab[data-agents]');
+    if (!btn) return;
+    const envKey = btn.dataset.env;
+    btn.parentElement.querySelectorAll('.mini-tab').forEach(b => {
+      b.classList.toggle('is-active', b === btn);
+      b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+    });
+    state[envKey].agents = Number(btn.dataset.agents);
+    updateEnvVideos(envKey);
+  });
+
+  // Handle obstacle mini-tabs (delegated)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button.mini-tab[data-obs]');
+    if (!btn) return;
+    const envKey = btn.dataset.env;
+    const group = btn.parentElement;
+
+    // switch active state
+    group.querySelectorAll('.mini-tab').forEach(b => {
+      b.classList.toggle('is-active', b === btn);
+      b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+    });
+
+    // set state & update
+    state[envKey].obs = btn.dataset.obs; // 'no' or 'yes'
+    updateEnvVideos(envKey);
+  });
+
+  // Anchors inside hidden environment tabs (e.g. #dubins-car-results): switch to
+  // that environment's tab first so the browser can scroll to the target
+  function revealEnvForHash(hash) {
+    let el = null;
+    try { el = hash && hash.length > 1 ? document.querySelector(hash) : null; } catch (e) { return; }
+    if (!el) return;
+    const sec = el.closest('.env-section');
+    if (sec && sec.classList.contains('is-hidden')) {
+      const tab = document.querySelector(`#env-tabs a[data-env="${sec.id.replace('env-', '')}"]`);
+      if (tab) tab.click();
+      el.scrollIntoView();
+    }
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (a) revealEnvForHash(a.getAttribute('href'));
+  });
+  document.addEventListener('DOMContentLoaded', () => { revealEnvForHash(location.hash); });
+
+  // Initial boot: set default sources for all envs
+  ['DoubleIntegrator','DubinsCar','SingleIntegrator'].forEach(updateEnvVideos);
+
+  // Pause ambient looping videos when off-screen; resume when visible
+  // (micro-loops excluded — they have their own loop-count controller)
+  if ('IntersectionObserver' in window) {
+    const pauser = new IntersectionObserver((entries) => {
+      entries.forEach(({target, isIntersecting}) => {
+        target.dataset.visible = isIntersecting;
+        if (isIntersecting) { target.play().catch(() => {}); }
+        else { target.pause(); }
+      });
+    }, { threshold: 0.25 });
+    document.querySelectorAll('.video-square video:not(.micro-loop), #realrobot-video').forEach(v => pauser.observe(v));
+  }
+
+  // Navbar burger
+  document.addEventListener('DOMContentLoaded', function() {
+    const $burgers = Array.from(document.querySelectorAll('.navbar-burger'));
+    $burgers.forEach(($el) => {
+      $el.addEventListener('click', () => {
+        const target = $el.dataset.target;
+        const $target = document.getElementById(target);
+        $el.classList.toggle('is-active');
+        $target.classList.toggle('is-active');
+      });
+    });
+  });
+
+  // Utilities
+  function hydrateSource(source) {
+    if (source && source.dataset && source.dataset.src && !source.src) {
+      source.src = source.dataset.src;
+      const video = source.closest('video');
+      if (video) { video.load(); }
+    }
+  }
+
+  // Lazy-load videos by watching their <source data-src> elements
+  (function() {
+    const sources = Array.from(document.querySelectorAll('video.lazy-video source[data-src]'));
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            hydrateSource(entry.target);
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '300px 0px' });
+      sources.forEach(src => io.observe(src));
+    } else {
+      sources.forEach(hydrateSource);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Ensure real-robot video metadata loads for seeking
+      const rr = document.getElementById('realrobot-video');
+      if (rr) {
+        const rrSrc = rr.querySelector('source[data-src]');
+        if (rrSrc) hydrateSource(rrSrc);
+      }
+      // Ensure overview video metadata loads for seeking
+      const overview = document.getElementById('overview-video');
+      if (overview) {
+        const overviewSrc = overview.querySelector('source[data-src]');
+        if (overviewSrc) hydrateSource(overviewSrc);
+      }
+    });
+  })();
+
+  // Image lightbox (Bulma modal)
+  (function() {
+    const figures = document.querySelectorAll('figure.is-clickable[data-image]');
+    figures.forEach(fig => {
+      fig.addEventListener('click', () => {
+        const imgSrc = fig.getAttribute('data-image');
+        const modal = document.createElement('div');
+        modal.className = 'modal is-active';
+        modal.innerHTML = `
+          <div class="modal-background"></div>
+          <div class="modal-content"><p class="image"><img src="${imgSrc}" alt="Zoomed figure" /></p></div>
+          <button class="modal-close is-large" aria-label="close"></button>`;
+        document.body.appendChild(modal);
+        const close = () => { modal.parentNode.removeChild(modal); };
+        modal.querySelector('.modal-background').addEventListener('click', close);
+        modal.querySelector('.modal-close').addEventListener('click', close);
+      });
+    });
+  })();
+
+/* Micro-loop controller: autoplay muted, loop N times, then stop & show controls */
+(function() {
+  const clips = Array.from(document.querySelectorAll('video.micro-loop'));
+  const loops   = v => parseInt(v.dataset.loops || '3', 10);
+  const done    = v => parseInt(v.dataset.done  || '0', 10);
+  const left    = v => Math.max(0, loops(v) - done(v));
+
+  clips.forEach(v => {
+    v.dataset.done = '0';
+    v.muted = true; v.autoplay = true; v.playsInline = true;
+
+    const onEnded = () => {
+      v.dataset.done = String(done(v) + 1);
+      if (left(v) > 0) { v.currentTime = 0; v.play().catch(()=>{}); }
+      else { v.pause(); v.controls = true; } // allow manual replay
+    };
+    v.addEventListener('ended', onEnded);
+
+    const onCanPlay = () => { if (left(v) > 0) v.play().catch(()=>{}); v.removeEventListener('canplay', onCanPlay); };
+    v.addEventListener('canplay', onCanPlay);
+  });
+
+  // Pause when off-screen to reduce distraction/battery
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(({target, isIntersecting}) => {
+        if (!target.classList.contains('micro-loop')) return;
+        if (isIntersecting && left(target) > 0) target.play().catch(()=>{});
+        else target.pause();
+      });
+    }, { threshold: 0.35, rootMargin: '100px 0px' });
+    clips.forEach(v => io.observe(v));
+  }
+})();
+
+</script>
+
+<noscript>
+  <section class="section">
+    <div class="container">
+      <article class="message is-warning">
+        <div class="message-header"><p>JavaScript Disabled</p></div>
+        <div class="message-body">Interactive features like agent selectors, lazy‑loading and lightbox require JavaScript. Videos and images are still available directly in the markup.</div>
+      </article>
+    </div>
+  </section>
+</noscript>
+
+</body>
+</html>

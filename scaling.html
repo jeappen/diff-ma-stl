@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="Scaling to large teams — Generalizable Multi-Agent Planning from Signal Temporal Logic Specifications via Diffusion" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generalizable Multi-Agent Planning from Signal Temporal Logic Specifications via Diffusion — Scaling</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700|Noto+Sans:400,700|Castoro:400,700&display=swap" rel="stylesheet" />
+
+  <!-- Bulma (single source) & helpers -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+  <link rel="stylesheet" href="./static/css/index.css" />
+  <link rel="icon" href="./static/images/favicon.svg" />
+
+  <!-- MathJax for inline math in captions -->
+  <script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true,
+      tags: 'ams'
+    },
+    svg: {
+      fontCache: 'global'
+    },
+    startup: {
+      ready: function() {
+        MathJax.startup.defaultReady();
+      }
+    }
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MathJax !== 'undefined') {
+      MathJax.typesetPromise().catch(function(err) {
+        console.log('MathJax initial typeset error:', err);
+      });
+    }
+  });
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <!-- JS (deferred) -->
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+
+  <style>
+    :root { --maxw: 1152px; }
+    html, body { font-family: "Noto Sans", Arial, sans-serif; scroll-behavior: smooth; }
+    .hero.is-title {
+      background: radial-gradient(1000px 500px at 10% 10%, #f2f6ff 0, #ffffff 50%, #ffffff 100%);
+      border-bottom: 1px solid #eee;
+      margin-bottom: 0;
+    }
+    .hero .title { font-family: "Google Sans", Arial, sans-serif; }
+    .is-tight { margin-top: .75rem; margin-bottom: .75rem; }
+    .container.is-max-page { max-width: var(--maxw); }
+
+    /* Tabs & sections */
+    .section { padding-top: 3rem; padding-bottom: 3rem; }
+    .is-hidden { display: none !important; }
+
+    /* Segmented controls styled like tabs */
+    .mini-tabs { display: inline-flex; gap: .25rem; background: #f5f5f5; padding: .25rem; border-radius: 999px; }
+    .mini-tab { border: none; background: transparent; padding: .35rem .75rem; border-radius: 999px; font-size: 1.0rem; cursor: pointer; }
+    .mini-tab.is-active { background: white; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+    /* Page switcher pills in the navbar: left navbar items link within this page,
+       these pills switch between pages */
+    .page-tabs .mini-tab { color: #4a4a4a; text-decoration: none; display: inline-flex; align-items: center; }
+    .page-tabs .mini-tab.is-active { color: #363636; font-weight: 600; }
+
+    /* Bulma turns the navbar horizontal at 1024px, but the container only reaches
+       its full width at 1216px. In between there is not room for the section links
+       plus the four page pills, and the pills get pushed off-screen. Keep the
+       burger menu over that range instead. */
+    @media (min-width: 1024px) and (max-width: 1215px) {
+      .navbar { display: block; }
+      .navbar > .container { display: block; }
+      .navbar-burger { display: block; }
+      .navbar-menu { display: none; }
+      .navbar-menu.is-active {
+        display: block;
+        background-color: #fff;
+        box-shadow: 0 8px 16px rgba(10, 10, 10, .1);
+        padding: .5rem 0;
+      }
+      .navbar-menu.is-active .navbar-start,
+      .navbar-menu.is-active .navbar-end { display: block; margin: 0; }
+      .navbar-menu.is-active .navbar-item { display: block; }
+    }
+
+    /* Small note under titles */
+    .dim { color: #808080; font-size: .85rem; }
+
+    /* Light table styles for research look */
+    table.research { width: 100%; border-collapse: collapse; font-size: .95rem; margin: .5rem 0 1rem; }
+    table.research th, table.research td { border: 1px solid #e6e6e6; padding: .5rem .6rem; vertical-align: middle; }
+    table.research thead th { background: #fafafa; font-weight: 700; }
+
+    /* The configuration reported in the headline table */
+    table.research tr.is-reported td { background: #f7faff; }
+
+    /* Narrower table for the two smaller sweeps */
+    table.research.is-compact { max-width: 46rem; }
+
+    /* Wide tables scroll inside their own container instead of the page */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Sticky subnav on wide screens */
+    @media (min-width: 1088px) {
+      .subnav { position: sticky; top: 0; background: #fff; z-index: 30; border-bottom: 1px solid #eee; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ====== Top Navigation ====== -->
+<nav class="navbar is-white subnav" role="navigation" aria-label="main navigation">
+  <div class="container is-max-page">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="index.html"><strong>STL Diffusion</strong></a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navMenu">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div id="navMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="#summary">Summary</a>
+        <a class="navbar-item" href="#results">Results</a>
+        <a class="navbar-item" href="#goal-scale">Goal Scale</a>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item" aria-label="Switch page">
+          <div class="mini-tabs page-tabs">
+            <a class="mini-tab" href="index.html">Main</a>
+            <a class="mini-tab" href="obstacles.html">Obstacles</a>
+            <a class="mini-tab" href="failure-modes.html">Failures</a>
+            <a class="mini-tab is-active" href="scaling.html" aria-current="page">Scaling</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ====== Hero ====== -->
+<section id="top" class="hero is-title">
+  <div class="hero-body">
+    <div class="container is-max-page has-text-centered">
+      <h1 class="title is-2">Scaling to Large Teams</h1>
+      <p class="subtitle is-5 is-tight">Companion page: safety, success, and finish from 8 to 128 agents in the Dubins Car environment. See the <a href="index.html">main page</a> for the full results.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Summary ====== -->
+<section id="summary" class="section">
+  <div class="container is-max-page">
+    <h2 class="title is-4">Summary</h2>
+    <div class="content">
+      <p>
+        Our multi-agent diffusion planner holds roughly 90% success through $N=32$ and leads the MILP
+        baseline by double digits through $N=64$, from $+15.6$ to $+33.3$ points. At $N=128$ the two
+        methods tie on success (34.4 against 33.3) and our safety falls to 41.9%. We therefore present
+        $N\le64$ as the result and $N=128$ as the point where the current model runs out.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        Setting: Dubins Car environment, mixed heterogeneous specification, where each agent samples one
+        component (sequence, branch, cover, loop, or signal) per episode, on a fixed goal grid at goal
+        scale 2.0. Rates are means over 3 episodes.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Results ====== -->
+<section id="results" class="section" style="padding-top: 0;">
+  <div class="container is-max-page">
+    <h2 class="title is-4">Results at goal scale 2.0</h2>
+    <p class="is-size-7 has-text-grey">Note: values are percentages of all agents. Success counts agents that stay safe <em>and</em> satisfy their specification, so it is not the product of the two columns beside it.</p>
+    <div class="table-wrap">
+      <table class="research" aria-label="Dubins Car — scaling from 8 to 128 agents at goal scale 2.0">
+        <caption>
+          Scaling from $N=8$ to $N=128$ at goal scale 2.0, on the mixed specification in the Dubins Car
+          environment.
+          D-MA: Diffusion-based Multi-Agent (Ours), STLPY: MILP planner.
+          Best success rate for each $N$ is in <strong>bold</strong>, and $N=128$ is left unbolded
+          because the two methods tie there (see the notes below). Success Δ is computed from
+          unrounded rates.
+        </caption>
+        <thead>
+          <tr>
+            <th rowspan="2"><strong>N</strong></th>
+            <th colspan="2"><strong>Success Rate (↑)</strong></th>
+            <th colspan="2"><strong>Safe Rate (↑)</strong></th>
+            <th colspan="2"><strong>Finish Rate (↑)</strong></th>
+            <th rowspan="2"><strong>Success Δ</strong></th>
+          </tr>
+          <tr>
+            <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+            <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+            <th><strong>D-MA</strong></th><th><strong>STLPY</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>8</td>
+            <td><strong>91.7</strong></td><td>58.3</td>
+            <td>100.0</td><td>100.0</td>
+            <td>91.7</td><td>58.3</td>
+            <td><strong>+33.3</strong></td>
+          </tr>
+          <tr>
+            <td>16</td>
+            <td><strong>91.7</strong></td><td>64.6</td>
+            <td>100.0</td><td>95.8</td>
+            <td>91.7</td><td>68.8</td>
+            <td><strong>+27.1</strong></td>
+          </tr>
+          <tr>
+            <td>32</td>
+            <td><strong>89.6</strong></td><td>66.7</td>
+            <td>99.0</td><td>90.6</td>
+            <td>89.6</td><td>75.0</td>
+            <td><strong>+22.9</strong></td>
+          </tr>
+          <tr>
+            <td>64</td>
+            <td><strong>70.8</strong></td><td>55.2</td>
+            <td>80.2</td><td>83.3</td>
+            <td>88.5</td><td>69.8</td>
+            <td><strong>+15.6</strong></td>
+          </tr>
+          <tr style="border-top: 2px solid #666;">
+            <td>128</td>
+            <td>34.4</td><td>33.3</td>
+            <td>41.9</td><td>64.1</td>
+            <td>77.6</td><td>66.1</td>
+            <td>+1.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="content">
+      <p class="is-size-7 has-text-grey">
+        <strong>Read the safe rate together with the finish rate.</strong> The MILP baseline's higher
+        safety at $N=128$ (64.1 against our 41.9) is not a win. Its finish rate there is 66.1, so it is
+        partly safe because fewer of its agents ever complete their tours. Safety on its own rewards an
+        agent that does very little.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>$N=128$ is a tie.</strong> The $+1.0$ success gap sits inside the noise of 3 episodes on
+        a single seed, whereas the gaps at $N\le64$ (from $+15.6$ to $+33.3$) are far outside it.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Setup and step budget.</strong> The arena grows with the goal scale, from side 6 at
+        scale 1.0 to 10 at scale 2.0 and 14 at scale 3.0, and the step budget was raised at the larger
+        scales (7200 at scale 2.5, 9000 at scale 3.0). At goal scale 2.0, the configuration reported
+        above, the budget stays at its default of 4800, which is the tightest budget-to-distance ratio
+        in the sweep. It was measured rather than assumed: at $N=64$ only 2.6% of agents run out of
+        steps and 93.8% reach their final waypoint, so the horizon is not what limits these numbers.
+        Temporal operators are interpreted over plan steps, which advance on reach rather than on
+        wall-clock, so a slow agent is not penalized by the specification.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Goal scale ====== -->
+<section id="goal-scale" class="section" style="padding-top: 0;">
+  <div class="container is-max-page">
+    <h2 class="title is-4">Why the goals are spread, and where that stops working</h2>
+    <div class="content">
+      <p>
+        Scaling the goal set apart trades one failure for another. It buys safety, by giving agents
+        somewhere to go that is not through each other. Beyond goal scale 1.5 it starts costing plan
+        quality, because the planner was never trained on goals that far apart. The two tables below are
+        the same runs, and past that point they move in opposite directions.
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table class="research is-compact" aria-label="Safe rate of the multi-agent diffusion planner against goal scale">
+        <caption>
+          <strong>Safe rate</strong> of our multi-agent diffusion planner against goal scale. Spreading
+          the goals apart buys safety, and it buys most where crowding is worst. The shaded row is the
+          configuration reported above.
+        </caption>
+        <thead>
+          <tr>
+            <th><strong>Goal scale</strong></th>
+            <th><strong>Arena</strong></th>
+            <th><strong>$N=8$</strong></th>
+            <th><strong>$N=16$</strong></th>
+            <th><strong>$N=32$</strong></th>
+            <th><strong>$N=64$</strong></th>
+            <th><strong>$N=128$</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1.0</td><td>10</td><td>—</td><td>—</td><td>—</td><td>57.8</td><td>9.6</td></tr>
+          <tr><td>1.5</td><td>10</td><td>100.0</td><td>100.0</td><td>94.8</td><td>72.4</td><td>23.7</td></tr>
+          <tr class="is-reported"><td><strong>2.0</strong></td><td>10</td><td>100.0</td><td>100.0</td><td>99.0</td><td>80.2</td><td>41.9</td></tr>
+          <tr><td>2.5</td><td>12</td><td>100.0</td><td>95.8</td><td>100.0</td><td>89.1</td><td>43.5</td></tr>
+          <tr><td>3.0</td><td>14</td><td>100.0</td><td>100.0</td><td>99.0</td><td>91.7</td><td>43.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-wrap">
+      <table class="research is-compact" aria-label="Finish rate of the multi-agent diffusion planner against goal scale">
+        <caption>
+          <strong>Finish rate</strong> of the same runs. Above goal scale 1.5, spreading the goals apart
+          costs plan quality at every agent count, including $N=8$ where there is no crowding to relieve.
+          Goal scale 1.0 was only run at $N=64$ and $N=128$.
+        </caption>
+        <thead>
+          <tr>
+            <th><strong>Goal scale</strong></th>
+            <th><strong>Arena</strong></th>
+            <th><strong>$N=8$</strong></th>
+            <th><strong>$N=16$</strong></th>
+            <th><strong>$N=32$</strong></th>
+            <th><strong>$N=64$</strong></th>
+            <th><strong>$N=128$</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1.0</td><td>10</td><td>—</td><td>—</td><td>—</td><td>93.2</td><td>82.8</td></tr>
+          <tr><td>1.5</td><td>10</td><td>100.0</td><td>100.0</td><td>96.9</td><td>93.2</td><td>83.9</td></tr>
+          <tr class="is-reported"><td><strong>2.0</strong></td><td>10</td><td>91.7</td><td>91.7</td><td>89.6</td><td>88.5</td><td>77.6</td></tr>
+          <tr><td>2.5</td><td>12</td><td>83.3</td><td>85.4</td><td>83.3</td><td>81.3</td><td>76.6</td></tr>
+          <tr><td>3.0</td><td>14</td><td>87.5</td><td>77.1</td><td>78.1</td><td>73.4</td><td>68.8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="content">
+      <p>
+        <strong>$N=8$ separates the two causes.</strong> With 8 agents there is no crowding to relieve:
+        the safe rate is 100.0 at every goal scale it was run at. Spreading the goals cannot help those agents and
+        cannot hurt them through traffic, yet their finish rate still falls from 100.0 at goal scale 1.5
+        to 83.3 at 2.5. The only variable left is how far apart the goals are, so that drop is the
+        planner on its own, out of distribution on a goal set wider than the one it was trained on.
+      </p>
+      <p>
+        <strong>It is goal spread, not arena size.</strong> Goal scales 1.5 and 2.0 run in the same arena
+        of side 10, and the $N=8$ finish rate still falls from 100.0 to 91.7 between them. What the model
+        has not seen is the distance between goals, not the dimensions of the map.
+      </p>
+      <p>
+        <strong>It is not the step budget.</strong> Ranked by budget per unit of goal distance, the scales
+        run 1.5, then 3.0, then 2.5, then 2.0. If the horizon were the limit, scale 3.0 would finish
+        better than scale 2.0 at $N=8$. It finishes worse, 87.5 against 91.7, so that ordering rules the
+        budget out.
+      </p>
+      <p>
+        Where this leaves scaling: at $N=32$ goal scaling is not needed, with safety at roughly 95% or
+        better at every scale from 1.5 up. At $N=64$ it is needed, since unscaled goals leave safety
+        near 58% and goal scale 2.0 is the first setting to clear 80%. At $N=128$ it stops helping,
+        with safety saturating near 43% from goal scale 2.5 onward, and because more spread also costs
+        plan quality, no setting rescues $N=128$. The remaining gap points at the planner rather than
+        the tracking controller (GCBF+ reports high safety on single-goal reach in an arena of side 16,
+        larger than any used here), so reaching that regime calls for training or tuning the planner on
+        the wider goal set rather than spreading the goals further.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Footer ====== -->
+<footer class="footer">
+  <div class="content has-text-centered">
+    <p class="is-size-7">© 2026 Authors. This website is for research dissemination. Assets © respective owners.</p>
+  </div>
+</footer>
+
+<script>
+  // Navbar burger
+  document.addEventListener('DOMContentLoaded', function() {
+    const $burgers = Array.from(document.querySelectorAll('.navbar-burger'));
+    $burgers.forEach(($el) => {
+      $el.addEventListener('click', () => {
+        const target = $el.dataset.target;
+        const $target = document.getElementById(target);
+        $el.classList.toggle('is-active');
+        $target.classList.toggle('is-active');
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
