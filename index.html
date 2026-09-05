@@ -161,6 +161,14 @@
       .subnav { position: sticky; top: 0; background: #fff; z-index: 30; border-bottom: 1px solid #eee; }
     }
 
+    /* BibTeX block */
+    #bibtex pre {
+      background: #f7f8fa; border: 1px solid #e6e8eb; border-radius: .5rem;
+      padding: 1rem 1.25rem; overflow-x: auto; text-align: left;
+      font-size: .85rem; line-height: 1.5; white-space: pre;
+    }
+    #bibtex .bib-header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+
   </style>
 </head>
 <body>
@@ -182,6 +190,7 @@
         <a class="navbar-item" href="#envs">Environments</a>
         <a class="navbar-item" href="#dubins-car-results">Tables</a>
         <a class="navbar-item" href="#supplementary">Supplementary</a>
+        <a class="navbar-item" href="#bibtex">BibTeX</a>
       </div>
       <div class="navbar-end">
         <div class="navbar-item" aria-label="Switch page">
@@ -209,10 +218,22 @@
         <a href="https://www.cs.purdue.edu/homes/suresh/">Suresh Jagannathan</a>
       </p>
       <p class="subtitle is-6 is-tight">Purdue University</p>
-      <div class="mt-3">
+      <div class="mt-3 buttons is-centered">
+        <a class="button is-dark is-rounded" href="https://ieeexplore.ieee.org/document/11676061">
+          <span class="icon"><i class="ai ai-ieee"></i></span>
+          <span>Paper</span>
+        </a>
+        <a class="button is-dark is-rounded" href="https://arxiv.org/abs/2608.29490">
+          <span class="icon"><i class="ai ai-arxiv"></i></span>
+          <span>arXiv</span>
+        </a>
         <a class="button is-dark is-rounded" href="https://github.com/jeappen/diff-ma-stl">
           <span class="icon"><i class="fab fa-github"></i></span>
           <span>Code</span>
+        </a>
+        <a class="button is-dark is-rounded" href="#bibtex">
+          <span class="icon"><i class="fas fa-quote-left"></i></span>
+          <span>BibTeX</span>
         </a>
       </div>
     </div>
@@ -1571,6 +1592,29 @@
   </div>
 </section>
 
+<!-- ====== BibTeX ====== -->
+<section id="bibtex" class="section">
+  <div class="container is-max-page">
+    <div class="bib-header">
+      <h2 class="title is-3">BibTeX</h2>
+      <button id="copy-bibtex" class="button is-small is-rounded" type="button">
+        <span class="icon"><i class="fas fa-copy"></i></span>
+        <span>Copy</span>
+      </button>
+    </div>
+<pre id="bibtex-entry"><code>@ARTICLE{Eappen2026RAL,
+  author={Eappen, Joe and Xiong, Zikang and Iyengar, Shreyash S. and Jagannathan, Suresh},
+  journal={IEEE Robotics and Automation Letters},
+  title={Generalizable Multi-Agent Planning From Signal Temporal Logic Specifications Via Diffusion},
+  year={2026},
+  volume={},
+  number={},
+  pages={1-8},
+  keywords={Planning;Modeling;Trajectory;Timing;Logic;Diffusion models;Training;Silicon;Robustness;Resource management;Multi-Robot Systems;Hybrid Logical/Dynamical Planning and Verification;Generative Models},
+  doi={10.1109/LRA.2026.3730215}}</code></pre>
+  </div>
+</section>
+
 <!-- ====== Footer ====== -->
 <footer class="footer">
   <div class="content has-text-centered">
@@ -1975,6 +2019,32 @@
     </div>
   </section>
 </noscript>
+
+<script>
+  // === Copy BibTeX to clipboard ===
+  (function () {
+    const btn = document.getElementById('copy-bibtex');
+    const entry = document.getElementById('bibtex-entry');
+    if (!btn || !entry) return;
+    btn.addEventListener('click', function () {
+      const text = entry.innerText;
+      const done = function () {
+        const label = btn.querySelector('span:last-child');
+        const prev = label.textContent;
+        label.textContent = 'Copied!';
+        setTimeout(function () { label.textContent = prev; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  })();
+</script>
 
 </body>
 </html>
