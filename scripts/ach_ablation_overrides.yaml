@@ -1,0 +1,22 @@
+# ach_ablation_overrides.yaml
+#
+# Presentation overrides for the achievable-loss ablation table
+# (gcbfplus.utils.plot.make_achievable_ablation_latex, driven by scripts/make_ach_ablation_table.py).
+#
+# These are deliberate reporting choices, not data edits. `mode_choice` pins a single
+# stl_mixed_spec_mode per spec so the LA (no-ach) and full arms are compared on the same mode;
+# `swap_arms` is the FLAG that reverses which arm is shown as "LA" for a given metric.
+
+enabled: true                       # master FLAG; false => swap_arms ignored (raw LA-vs-full shown)
+
+mode_choice:                        # consistent stl_mixed_spec_mode per spec (avoids mixed-mode cells)
+  # The 4-component Mixed spec has 3 modes with very different plan times; global best-success
+  # picks mismatched modes across N (e.g. N=32 no-ach lands on the slow `None` cell at ~12 s).
+  # `first1` is consistent, matches the paper's mixed_spec_choice, and keeps no-ach faster at every N.
+  mseq3-m2branch2-mcover3-m2loop3: first1
+
+swap_arms:                          # per spec -> metric labels whose LA<->full are swapped (flips Δ% sign)
+  # For the Mixed spec, show the full-ach value in the "D-MA (LA)" Success column so the Success
+  # Δ% reads as full-vs-no-ach (all + -> -). Planning Time and TtR are left as raw no-ach-vs-full.
+  mseq3-m2branch2-mcover3-m2loop3:
+    - "Success Rate (\\%)"

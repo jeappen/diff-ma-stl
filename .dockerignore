@@ -1,0 +1,48 @@
+# Large artifacts — mount these at runtime instead of baking them in.
+datasets/
+diff_checkpoints/
+pretrained/
+logs/
+wandb/
+out_final/
+out_repro/
+out_ref/
+barplots/
+*.zip
+*.npy
+*.pkl
+*.h5
+
+# VCS and tooling metadata
+.git/
+.github/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+
+# Host-only secrets — mounted at `docker run` time, never baked into image.
+.secrets/
+
+# Python caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+
+# Build / tmp
+build/
+dist/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Don't ignore the Dockerfile itself or the requirements files
+!Dockerfile
+!requirements.txt
+!requirements-docker.txt

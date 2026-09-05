@@ -1,0 +1,20 @@
+.DS_Store
+.idea/
+__pycache__/
+wandb
+logs
+figs
+videos/
+wandb/
+test_log.csv
+*.egg-info
+/output.csv
+
+# Host-only secrets, never committed.
+.secrets/
+
+# Plot outputs of scripts/replot_all_final.sh and scripts/release/plot_reproduced.py
+out_final/
+out_repro/
+out_ref/
+barplots/

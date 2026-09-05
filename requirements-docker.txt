@@ -1,0 +1,38 @@
+# Installed on top of nvcr.io/nvidia/jax:24.04-py3 (25.01 also works; 25.08 ships JAX 0.6, whose
+# XLA crashes on the team_choiceseq3 guidance -- see README), with matching jax-cuda12-* plugins.
+#
+# DO NOT list jax or jaxlib here — even a range like `jax>=0.5,<0.6` lets pip
+# swap NVIDIA's optimised build for a stock PyPI wheel and mismatch the
+# cuda plugins at /opt/jaxlibs/. The Dockerfile generates /tmp/jax-pins.txt
+# from the already-installed versions and passes it as `pip install
+# --constraint`, which freezes jax, jaxlib and ml_dtypes to exactly what the
+# base image shipped.
+#
+# VCS deps (jaxproxqp, diff-spec) are installed separately in the Dockerfile
+# so an optional GitHub token only appears in that one RUN.
+
+flax>=0.7.2
+jraph>=0.0.6.dev0
+jaxtyping>=0.2.21
+numpy>=1.25.2,<2
+einops>=0.6.1
+matplotlib>=3.7.2
+tqdm>=4.66.1
+tensorflow-probability>=0.21.0
+optax>=0.1.7
+# runtime dependencies of jaxproxqp, which the Dockerfile installs with --no-deps
+equinox>=0.11.0
+attrs>=23.1.0
+loguru>=0.7.2
+scipy>=1.11.2
+wandb>=0.15.8,<0.21.0
+pyyaml>=6.0.1
+orbax_checkpoint>=0.6.4,<0.7
+seaborn>=0.12.2
+pandas>=2.0
+rich>=13.5.3
+colour>=0.1.5
+control>=0.9.4
+h5py>=3.11.0
+distrax>=0.1.3
+gym>=0.26.0

@@ -1,0 +1,67 @@
+# Default options (overridden by the runtime config / CLI where applicable)
+training_params:
+  max_step: 256  # Default episode length when no planner sets one
+  debug: False
+  inner_epoch: 8
+  ds_params:
+    #  Parameters for the diff-spec framework
+    HARDNESS: 3.0
+    include_start_state: True  # For the STL score evaluations
+    shrink_factor: 0.4  # How much to shrink the goal region for STLPy solver paths to reach goal
+    #  lastN: last N goals are common (e.g. last2, last1), firstN: first N goals are common (e.g. first2, first1)
+    mixed_spec_mode: "first1"  # If None no change else lastN, firstN
+    within_boundary: True  # Add Always within boundary constraint
+  wandb: # Only needed for wandb-hosted diffusion checkpoints (the bundled model loads locally)
+    default_wandb_team: 'my-team'  # EDIT: your wandb entity
+    default_wandb_project: 'my-project'  # EDIT: your wandb project
+  diffusion: # For training the diffusion model and guidance loss
+    auxiliary_loss_default_weight: 0.1
+    auxiliary_loss_last_fraction: 0.4  # Fraction of the last steps to use for the auxiliary loss
+    exponential_loss_k: 5.0  # Exponential loss factor for the auxiliary loss
+
+planner_params:
+  plan_length: 10  # Overridden at test time by the checkpoint horizon / --spec-len
+  goal_sample_interval: 10  # How often to sample goals (--goal-sample-interval)
+
+  # Asynchronous planner: goals advance per agent on reach
+  # NOTE: 0.19 for diffusion (more noisy?), 0.29 for stlpy (too low causes collision)
+  async_reach_radius: 0.2  # Reach threshold for the async planner
+  change_goal_immediately: False  # Change goal immediately after reaching the previous goal (--change_goal_immediately)
+
+  # Evaluation
+  mean_over_trajectories: True  # Use mean over trajectories for evaluation
+
+  # STLPy solver
+  global_stlpy_time_limit: 600  # Time limit in seconds for the global MILP solver (Gurobi)
+  stlpy_u_bound: 2.0  # Control bound per plan step for STLPy MILP.
+                       # At spec-len=15: 15×2.0=30m total budget (sufficient for all specs).
+                       # DubinsCar physics: v_max*dt*gsi ≈ 0.48. u=2.0 is ~4x margin.
+                       # Set to 20 for original (unconstrained) behavior.
+
+  # Evaluation allocation mode for team specs with --team-disjunctive
+  eval_allocation_mode: 'post_hoc'  # 'pre_planned' | 'post_hoc'
+    # pre_planned: evaluate against heuristic allocation (greedy/oracle) — default for non-disjunctive
+    # post_hoc: infer allocation from planned trajectories, then evaluate — default for disjunctive
+
+  # MA-STL specific parameters (CaTL+)
+  ma_stl:
+    exp_rob: True  # Use exponential robustness for MA-STL
+
+  # Diffusion model sampling
+  diffusion:
+    ma_stl_alternate_every: 8  # Alternate between MA-STL and SA-STL every n steps
+    stl_resample_threshold: 0.1  # Threshold for resampling STL guidance
+    max_sampling_iter: 40  # Maximum number of sampling iterations for STL guidance
+    ach_guidance_after_fraction: 0.5  # Fraction of steps after which achievable guidance is applied
+    stl_guidance_after_fraction: 0.0 # Fraction of steps after which STL guidance is applied
+    plan_from_state: True   # Use the first dimensions of the diffusion generated state
+                            # as the plan or use the goal (as generated action)
+    use_batched_sampling: False  # Use batched sampling for the diffusion model
+    num_candidates: 8 # Number of candidates for the diffusion model sampling
+    resample_batch_size: 8  # Accepted for compatibility with logged commands (no effect)
+    skip_resample: False  # Skip the STL reject/resample loop (accept first draw). False = loop on (paper default)
+
+env_params:
+  # Parameters for the environment
+  goal_size: 1.0
+  vanish_on_end: False  # Vanish or Land the agent on reaching the end of its plan

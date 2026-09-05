@@ -1,0 +1,75 @@
+# plot_config.yaml
+#
+# Human-readable record of the deliberate data-sourcing / plotting choices behind each
+# paper figure produced by plot_paper.py. These are the non-obvious decisions that make a
+# figure CORRECT or POSSIBLE (e.g. the Gradient/CE-NL arm living in a different project, or
+# the Signal spec using a different random-goal radius R for its diffusion/STLPY arms).
+#
+# Behavior is defined in code (plot_paper.py FIGURES + gcbfplus/utils/plot.py); this file
+# TRACKS the rationale so the choices are not lost. Keep it in sync when FIGURES changes.
+
+conventions:
+  wandb_entity: csbric
+
+  # DataFrameStyler.format_planner (gcbfplus/utils/plot.py). Several config arms collapse to
+  # 4 labels; make_table then keeps the best-success run per (spec, planner, N) cell -> the
+  # "best of" each collapsed group.
+  planner_labels:
+    "diffusion + diffusion_method=edm-ma": DIFF-MA    # includes achievable_guidance (edm-ach)
+    "diffusion + diffusion_method=edm":    DIFF-SA     # includes single-draw and best-of-8 (edm-bo8)
+    "stlpy":                               STLPY-SA
+    "ce_nl":                               Gradient
+
+  metrics:
+    success_safe: "run.summary success_mean / safe_mean (WandbLoader rescales x100)"
+    ttr_finish:   "run.summary eval/TtR, eval/finish_rate (WandbLoader strips the 'eval/' prefix)"
+    plan_time:    "run.summary plan_time_mean"
+    note: "Summary success_rate/safe_rate/finish_rate are LAST-EPISODE; use the *_mean / eval/* aggregates."
+
+  epi_filter_rationale: "Keep only epi in {5,10} so summary mean/std are true multi-episode aggregates."
+
+  levers:  # CLI flags in plot_paper.py
+    --no-signal:          "Drop Signal spec; Mixed reverts to the 4-component (no-signal) variant."
+    --max-plan-time:      "Drop runs above a plan-time threshold before aggregation (DIFF-MA only unless --max-plan-time-all)."
+    --diffma-le-gradient: "Keep DIFF-MA runs no slower than the Gradient run in the same (spec,N,mode) cell."
+    --latest:             "Drop the createdAt upper bound to include newly-added runs (createdAt-based sources only)."
+
+figures:
+
+  single_hetero_dubins:
+    title: "RAL main figure — heterogeneous DubinsCar specs, Success/Planning/TtR x N."
+    sources:
+      - {project: diff-mastl-test, preload: "createdAt in (2025-04-10, CREATEDAT_CAP)"}
+      - {project: diff-mastl-test, preload: "createdAt in (2025-09-10, CREATEDAT_CAP)"}
+    epi_filter: null
+    notes:
+      - "Achievable (achievable_guidance) runs are label DIFF-MA; --diffma-le-gradient excludes the slow ones."
+      - "createdAt cap (CREATEDAT_CAP in plot_paper.py) pins the run population for reproducibility."
+
+  random_loc_dubins:
+    title: "Random-predicate setting (random_goals == True) — same layout/labels as the main figure."
+    sources:
+      # Main arms DIFF-MA / DIFF-SA / STLPY-SA — curated area-6 grid.
+      - {project: gcbfplus-stl-test, preload: "tags=[random-loc-grid-a6], config.random_goals=true"}
+      # Gradient (ce_nl) — lives in the OTHER project, untagged. WHY: no ce_nl runs exist in
+      # gcbfplus-stl-test for the random setting, so Gradient must be sourced from diff-mastl-test.
+      - {project: diff-mastl-test,   preload: "config.planner=ce_nl, config.random_goals=true"}
+      # Signal (m2signal3) crowded R=1.5 arms — WHY: the a6-grid m2signal3 is unconstrained
+      # (~R=2 geometry) and shows a SMALL DIFF-MA vs STLPY-SA gap; the R=1.5 crowded set shows
+      # the intended larger gap (+10.3 vs +3.4 at N=32), so the Signal column is plotted at R=1.5.
+      - {project: gcbfplus-stl-test, preload: "tags=[random-loc-signal-region], config.random_goals_region=1.5"}
+    epi_filter: [5, 10]
+    no_ach_specs: [m2loop3]   # drop achievable_guidance DIFF-MA runs for these specs
+    single_draw_specs: [mcover3, "mseq3-m2branch2-mcover3-m2loop3-m2signal3", "mseq3-m2branch2-mcover3-m2loop3"]
+    per_spec_overrides:
+      m2loop3:   # implemented by no_ach_specs + drop_achievable_for_specs in plot_paper.py
+        diff_ma: "Use the cheaper no-achievable edm-ma (ach=False). The achievable run's plan time is ~10-50x larger (N=32: 20.9s vs 0.45s) at ~equal success (best 91.2/91.9/82.2 -> no_ach 90.0/91.9/80.9)."
+      mcover3_and_mixed:   # implemented by single_draw_specs + drop_batched_for_specs in plot_paper.py
+        diff_sa: "Use the honest single-draw edm for DIFF-SA (drop the 8x-compute best-of-8 / edm-bo8). Single-draw reports lower success (Cover N=8/16/32: 93.8/88.1/81.9 vs bo8 98.8/95.0/84.4; Mixed: 93.8/85.6/72.2 vs 97.5/93.1/85.3), which is the fair baseline."
+      m2signal3:   # implemented by _signal_r15_filter in plot_paper.py
+        diffusion_and_stlpy: "R=1.5 (random-loc-signal-region) — larger DIFF-MA vs STLPY-SA gap (+10.3 vs +3.4 at N=32)."
+        gradient_ce_nl:      "Unconstrained (~R=2) — no ce_nl exists at R=1.5, so Gradient is kept from the unconstrained runs (mixed R within the Signal column, by design)."
+        mode_unification:    "R=1.5 runs log stl_mixed_spec_mode inconsistently across N (None at N=8/16, first1 at N=32) though the effective traced mode is identical; _signal_r15_filter unifies it to 'None' so pick_best_row keeps every N instead of dropping the label-mismatched N=8/16 cells (which left Signal nearly empty there)."
+    notes:
+      - "Gradient (ce_nl) is epi=5 while the other arms are epi=10 — both accepted; caption it."
+      - "--no-signal empties Mixed here (no 4-component Mixed in this data); default (signal on) is correct."

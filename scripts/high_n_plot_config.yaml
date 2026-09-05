@@ -1,0 +1,133 @@
+# high_n_plot_config.yaml
+#
+# Non-obvious choices behind the high-N scaling figure (scripts/plot_high_n_scaling.py).
+# Behavior is in the script + gcbfplus/utils/spec_bar_figure.py; this file TRACKS the rationale.
+# Companion to plot_config.yaml (which covers the plot_paper.py figures).
+
+wandb:
+  entity: csbric
+  project: diff-mastl-test
+
+  # TWO sources, split by N. Each source supplies BOTH arms, so every COLUMN of the figure is an
+  # internally controlled comparison (same area / goal-scale / epi for DIFF-MA and STLPY-SA).
+  # There is ONE setting change across the x-axis, between N=32 and N=64 -- caption it.
+  #
+  # WHY the split (this is the important part):
+  #   Decongestion is only needed at N>=64. The internal replication log records: "N=32 needs no
+  #   decongestion" (>=94.8% safe at every scale >=1.5); "N=64 does" (unscaled goals give ~52%
+  #   safety; gs2.0 is the first scale clearing 80%).
+  #   Forcing gs2.0 onto N<=32 does not just add nothing -- it BREAKS the STLPY-SA arm. Under
+  #   goal scaling STLPY's success collapses monotonically (N=8: 93.8 native -> 58.3 gs1.5/gs2.0
+  #   -> 45.8 gs2.5 -> 33.3 gs3.0) while its safety stays 100% and -- the tell -- its TtR stays
+  #   FLAT (1539/1369/1441/1416/1363). A planner routing to genuinely farther goals cannot have
+  #   constant travel time. DIFF-MA's TtR grows as expected over the same scales
+  #   (1750/2359/2424/2537/2698). See high_n_scaling_notes.md sec 6 (open question).
+  #   Net effect: gs2.0 inflated the low-N gap ~2-7x (N=8 +5.0 -> +33.4; N=16 +8.8 -> +27.1;
+  #   N=32 +9.7 -> +22.9). The native cells are the defensible ones.
+  #   NOT a max_step budget problem: MORE budget makes STLPY worse (gs2.5 = 1.5x steps -> 45.8;
+  #   gs3.0 = 1.875x -> 33.3), safety is 100% at N=8, satisfying agents finish at TtR 1441 = 30%
+  #   of the 4800 cap, and the N=64/gs2.0 dump shows timeout 2.6% with wp_final 14.6/15.
+
+  sources:
+    # N <= 32 -- native fixed grid, no goal scaling (GCBF_GOAL_SCALE unset => absent from config).
+    - name: native-a6
+      num_agents: [8, 16, 32]
+      preload:
+        config.spec: mseq3-m2branch2-mcover3-m2loop3-m2signal3
+        config.area_size: 6
+        config.epi: 10
+        state: finished
+
+    # All N -- goal-spread decongestion sweep. env_gcbf_goal_scale (backfilled 2026-07-14) is
+    # authoritative; the gs2.0 TAG was wrong until then (area-10 hosted gs1.0/1.5/2.0, so 24
+    # runs all carried tag gs2.0) and a tag-grouped plot INVERTED the N=128 result. Filter
+    # numerically (== 2, not "2.0" -- wandb normalizes the float); see the internal replication log.
+    - name: gs2.0-a10
+      num_agents: [8, 16, 32, 64, 128]
+      preload:
+        config.env_gcbf_goal_scale: 2
+        config.spec: mseq3-m2branch2-mcover3-m2loop3-m2signal3
+        state: finished
+
+# PER-PANEL SOURCING. The panels deliberately do NOT share runs -- caption this.
+#
+# WHY: plan_time_mean is NOT comparable across goal scales. Same N=8, same diffusion model
+# (qkmvppvt), same num_candidates=8 / spec_len=15, DIFF-MA reads 29.5s at native area-6 but
+# 3.49s at gs2.0 (and it is not change_goal_immediately -- cgi on/off both give ~29s at area-6).
+# The likely cause is replan frequency: at area-6 goals are close, agents reach them constantly
+# and replan far more often, so plan_time_mean tracks goal spread. It is therefore valid WITHIN
+# one goal scale and meaningless ACROSS one. Sourcing the timing panels from the split would
+# render DIFF-MA as 29->25->21->21->50 s, i.e. planning "faster" at N=32 than at N=8. TtR
+# distorts the same way. So:
+#   success -> the split (each column internally controlled, defensible gaps)
+#   ttr/pt  -> uniform gs2.0 (one goal scale end to end, so the curve means something)
+panels:
+  success:
+    sources: [native-a6, gs2.0-a10]
+    prefer: native-a6        # where both cover an N, native wins (N<=32)
+  timing:                    # ttr + plan time
+    sources: [gs2.0-a10]     # uniform gs2.0 at every N
+
+# The DIFF-MA arm must be the SAME planner variant across the whole x-axis: plain edm-ma with
+# achievable guidance OFF (the gs2.0 runs are all ach=False, and the native area-6 pool contains
+# both ach=True and ach=False). Restricting to ach=False does not change the native best cells
+# (N=8 100.0, N=16 98.8 are ach=False runs anyway) -- it just makes the arm consistent.
+# Without the method filter, label_planner would fold DIFF-SA (edm / edm-bo8) rows into DIFF-MA.
+diffma:
+  require_method_contains: edm-ma
+  exclude_achievable_guidance: true
+
+# This figure is a two-arm comparison. The native area-6 pool also contains a ce_nl (Gradient)
+# run, which has no counterpart at N>=64 -- whitelist the arms so it cannot add a stray bar.
+planners: ["DIFF-MA", "STLPY-SA"]
+
+# One cell per (N, planner): highest success, matching make_table's best-of convention elsewhere.
+select: best_success
+
+snapshot: plot_snapshots/high_n_mixed_DubinsCar_data.csv
+
+# Single spec -> a single figure row. Label matches the paper's "Mixed" column elsewhere.
+spec_label: "Mixed"
+plot_name: high_n_scaling_mixed
+
+# Legend label for the diffusion arm (matches the team-spec figure's --merge-edm wording).
+# Keeps the same colour/sort position -- planner_colors maps both spellings to colorblind[0].
+diffma_label: "DIFF-MA (Ours)"
+
+# Expected shape; asserted at runtime so a silent data change fails loudly rather than
+# quietly dropping a bar.
+expect:
+  num_agents: [8, 16, 32, 64, 128]
+  planners_per_n: 2
+  total_rows: 10
+
+notes:
+  setting: >-
+    N<=32: area-6, no goal scaling, epi=10, spec_len=15, async planner, no obstacles, fixed-grid
+    goals. N>=64: area-10, goal-scale 2.0, epi=3, otherwise identical. Both arms share the
+    setting within each N, so every column is a controlled comparison; the x-axis changes setting
+    once between 32 and 64 because decongestion only becomes necessary there.
+  metrics: >-
+    Read from run.summary: success_mean/success_std (x100 by the loader), eval/TtR + eval/TtR_std,
+    plan_time_mean/plan_time_std. The internal replication log claims metrics live in history, not
+    summary -- that is TRUE ONLY of the bare per-episode keys (safe_rate/success_rate/finish_rate).
+    The aggregates this figure plots are all in summary and match the history means exactly;
+    eval/TtR is summary-ONLY (absent from history entirely). Never read summary['success_rate']:
+    it is the LAST EPISODE, not the mean (0.875 vs success_mean 0.9167 on f0td1sgv).
+  task_rate: >-
+    eval/task_rate is None on these runs (it is a CaTL team-spec metric). The team-spec figure's
+    dashed task-rate box is therefore disabled here (SCALING_METRICS) and dropped from the legend.
+  epi: >-
+    epi=10 at N<=32 but epi=3 (single seed) at N>=64. The N=64 gap (+15.6) is well outside noise;
+    the N=128 gap (+1.1) is NOT -- treat N=128 as the scaling limit / a tie, not a win. Caption
+    both the epi change and the goal-scale change at the 32->64 boundary.
+  plan_time: >-
+    Plots plan_time_mean (the field every other paper figure uses). The internal replication log's
+    "Comment 2" section quotes a different quantity (steady-state s/plan, compile excluded): N=8 edm-ma
+    10.5s there vs plan_time_mean 3.49s at gs2.0. Do not cite the two as the same number. Note
+    the plan-time panel also spans the 32->64 setting change.
+  safety: >-
+    Safety is deliberately NOT plotted. At N=128 DIFF-MA safety collapses to 41.9% while STLPY-SA
+    reads 64.1% -- that is not an STLPY win: its finish rate is only 66.1%, i.e. it is partly
+    "safe" because fewer of its agents ever complete their tours. Never quote STLPY-SA safety
+    without its finish rate beside it (see the internal replication log).

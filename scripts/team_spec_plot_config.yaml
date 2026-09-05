@@ -1,0 +1,82 @@
+# team_spec_plot_config.yaml
+#
+# Reproducible data-sourcing / selection config for scripts/plot_team_spec_results.py
+# (the CaTL team-spec paper figure: redun4x + choiceseq, planners STLPY-Global / STLPY-SA /
+# DIFF-MA at N=8/16/32, with the dashed task-rate box + nested success bar).
+#
+# This file is the SINGLE SOURCE OF TRUTH for the non-obvious choices. The script reads it;
+# nothing here is duplicated in code. Edit here to change the figure, not the script.
+
+wandb:
+  entity: csbric
+  project: gcbfplus-stl-test
+  download_tables: false          # summary already carries success_mean/task_rate/TtR/plan_time
+
+  # Runs excluded from EVERY source (buggy / probe / duplicate). tags-only (WandbLoader drops
+  # tags after load, so this is injected into each source's preload as a $nin filter).
+  exclude_tags: [seed-repeat, invalid-cand-gt8-n16-bug, probe-triple, probe-cand16,
+                 probe-avoid15, probe-stagger, probe-stagger-cand16]
+
+  # One WandbLoader preload per source (MongoDB-style). Every row from a source is stamped
+  # with `gs` (goal-scale). gs=1.0 sources also drop any gs-tagged run so the gs1.25 cell is
+  # not double-counted; the gs1.25 source is the choiceseq N=32 decongestion map.
+  sources:
+    - name: redun               # Redundant (AND) spec, all N, gs1.0 grid
+      preload: {"config.spec": {"$regex": "team_redun"}}
+      gs: 1.0
+    - name: choiceseq_v2        # Choice (OR) spec, bug-fixed spec-v2, gs1.0 grid (N=8/16 cells)
+      preload: {"config.spec": "team_choiceseq3", "tags": {"$in": ["spec-v2"]}}
+      gs: 1.0
+    - name: choiceseq_gs125     # Choice (OR) N=32 decongestion cell (GCBF_GOAL_SCALE=1.25)
+      preload: {"config.spec": "team_choiceseq3", "tags": {"$in": ["gs1.25"]}}
+      gs: 1.25
+
+# Goal-scale (GCBF_GOAL_SCALE) chosen PER CELL. Only choiceseq N=32 uses the gs1.25
+# decongestion map; every other cell (all redun, choiceseq N=8/16) uses the paper-default
+# gs1.0/area-6 grid. A cell keeps only rows whose stamped gs matches its target.
+goal_scale:
+  default: 1.0
+  overrides:
+    - {spec_contains: choiceseq, num_agents: 32, gs: 1.25}
+
+# STLPY-Global (joint MILP, ~800 s/episode) only has N=8 runs; drop any with N above this.
+planners:
+  stlpy_global_max_n: 8
+
+# DIFF-MA "best of" filtering. Two scopes are produced for comparison (CLI --diffma-scope):
+#   emergent : team_disjunctive only (the paper's no-pre-allocation method)
+#   all      : best over every allocation scheme (emergent + greedy/greedy_last/random/oracle)
+# Both scopes always drop the slow / known-worse achievability variants below.
+diffma:
+  exclude:
+    achievable_guidance: true               # slow achievability variant (10-50x plan time)
+    choiceseq_achievable_loss_coeff: 0.5     # hurts choiceseq N>=16 task rate
+  # 'emergent' scope = the disjunctive (no-pre-allocation) runs. The team-final a6 grid runs
+  # these with global_stl_only=False, ma_stl_loss_coeff=1 (the guide's global_stl_only:True/c10
+  # was a different, older run set), so the only real requirement is team_disjunctive.
+  emergent_requires:
+    redun:     {team_avoid: true, team_disjunctive: true}
+    choiceseq: {team_disjunctive: true}
+  # 'all' scope keeps every allocation scheme but still enforces the spec's avoidance term:
+  all_requires:
+    redun:     {team_avoid: true}
+    choiceseq: {}
+
+# Override: source the STLPY-SA arm from the old plotting code's local test_log.csv instead of
+# W&B. WHY: the old CSV has complete, sensible TtR for STLPY-SA in every cell, whereas the newer
+# W&B STLPY runs under/over-log TtR (see ttr note). This replaces the ENTIRE STLPY-SA bar
+# (success/task/TtR/plan) per (spec, N) with the old CSV's best run; STLPY-Global and DIFF-MA
+# stay from W&B. Path is relative to the repo root (or absolute). Set to null to disable.
+# CAVEAT: the old STLPY-SA runs are epi 3-5 / older spec version, so their success differs from
+# the W&B spec-v2 numbers; this override trades spec-v2 consistency for a complete TtR column.
+stlpy_sa_override_csv: plot_snapshots/stlpy_sa_old_override.csv
+
+# spec display names (LaTeX). First match on `contains` wins. Optional ttr_ymax fixes that
+# spec row's TtR panel top (else auto); Redundant peaks lower so we cap it at 2k.
+spec_display:
+  - {contains: choiceseq, label: "Choice ($\\vee$)"}
+  - {contains: redun,     label: "Redundant ($\\wedge$)", ttr_ymax: 2000}
+
+# Offline snapshot (written on a wandb pull; read back with --source csv). Committed
+# snapshot; a wandb pull overwrites it.
+snapshot: plot_snapshots/team_spec_DubinsCar_data.csv
