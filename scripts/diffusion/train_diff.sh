@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Sweep template for training the diffusion planner on a dataset written by create_dataset.py
 # (datasets/<Env>_*.h5). Edit the dataset name, wandb team/project and the grids below.
 # Usage: bash scripts/diffusion/train_diff.sh

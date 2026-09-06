@@ -21,7 +21,7 @@ wandb:
   #   -> 45.8 gs2.5 -> 33.3 gs3.0) while its safety stays 100% and -- the tell -- its TtR stays
   #   FLAT (1539/1369/1441/1416/1363). A planner routing to genuinely farther goals cannot have
   #   constant travel time. DIFF-MA's TtR grows as expected over the same scales
-  #   (1750/2359/2424/2537/2698). See high_n_scaling_notes.md sec 6 (open question).
+  #   (1750/2359/2424/2537/2698). Why STLPY's TtR stays flat under goal scaling is open.
   #   Net effect: gs2.0 inflated the low-N gap ~2-7x (N=8 +5.0 -> +33.4; N=16 +8.8 -> +27.1;
   #   N=32 +9.7 -> +22.9). The native cells are the defensible ones.
   #   NOT a max_step budget problem: MORE budget makes STLPY worse (gs2.5 = 1.5x steps -> 45.8;

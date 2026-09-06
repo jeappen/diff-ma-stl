@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Generate the achievable-loss ablation LaTeX table (D-MA (LA) vs the full DIFF-planner).
 
 Default: the 4-component Mixed spec with fixed predicates, sourced from the committed

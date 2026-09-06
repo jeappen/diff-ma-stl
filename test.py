@@ -858,7 +858,7 @@ def print_metrics_and_log(args, costs, env, finish_info_str, finish_infos, info_
         info_vals = [info_metrics[k] for k in info_keys]
 
         # Schema contract for test_log*.csv. The plotting bundle reads these columns BY NAME
-        # (scripts/plot_team_spec_results.py, scripts/release/_build_manifest.py and
+        # (scripts/plot_team_spec_results.py, scripts/release/plot_reproduced.py and
         # gcbfplus/utils/spec_bar_figure.py), and a changed header renames the existing file
         # (below) instead of appending to it, so keep the names and the column order stable.
         # The five entries after the STL_INFO_KEYS blocks are filled from `stl_info`.

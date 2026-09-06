@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Draw the three paper figures from the runs produced by reproduce_final_plots.sh.
 
 For every row of final_plots_manifest.csv (one row per plotted bar, or per panel-role of a bar)

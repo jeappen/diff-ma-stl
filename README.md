@@ -59,7 +59,7 @@ python test.py --path pretrained/DubinsCar/gcbf+/ --epi 10 -n 8 --area-size 6 --
 bash scripts/replot_all_final.sh   # -> out_final/*.pdf and *_table.tex, offline
 ```
 
-The figures and LaTeX tables regenerate from the committed W&B snapshots in `plot_snapshots/`: `random_loc_DubinsCar_data.csv.gz` (random predicate locations), `team_spec_DubinsCar_data.csv` plus `stlpy_sa_old_override.csv` (team specifications), and `high_n_mixed_DubinsCar_data.csv` (scaling). The fixed-predicate-center snapshot `single_hetero_DubinsCar_data.csv.gz` is kept for reference but not plotted. To re-run the evaluation behind every plotted bar (84 `test.py` commands with their original arguments) and redraw the figures from the new logs, see [`scripts/release/README.md`](scripts/release/README.md).
+The figures and LaTeX tables regenerate from the committed W&B snapshots in `plot_snapshots/`: `random_loc_DubinsCar_data.csv.gz` (random predicate locations), `team_spec_DubinsCar_data.csv` plus `stlpy_sa_old_override.csv` (team specifications), and `high_n_mixed_DubinsCar_data.csv` (scaling). The fixed-predicate-center snapshot `single_hetero_DubinsCar_data.csv.gz` is the source for the achievable-loss ablation table; its figure is not plotted. To re-run the evaluation behind every plotted bar (84 `test.py` commands with their original arguments) and redraw the figures from the new logs, see [`scripts/release/README.md`](scripts/release/README.md).
 
 ## Docker
 

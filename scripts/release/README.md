@@ -8,7 +8,6 @@ without access to our W&B projects.
 | `reproduce_final_plots.sh` | one `python test.py ...` line per plotted bar (exact original args), resumable runner. **Generated — do not hand-edit.** |
 | `final_plots_manifest.csv` | one row per bar (or per panel-role of a bar): source W&B run, commit, date, host, env knobs, args, and the reference numbers the paper shows (`ref_*`) |
 | `plot_reproduced.py` | reads the reproduced local logs and draws the figures with the **same renderers** the paper used |
-| `_build_manifest.py` | maintainer tool: regenerates the two files above from W&B (`_wandb_metadata_cache.json` lets it re-run offline) |
 
 ## Quick start
 
@@ -35,8 +34,8 @@ at 150 dpi) to the figures `scripts/replot_all_final.sh` writes to `out_final/`,
 | `team_spec` | `team_spec_comparison_merged_emergent.pdf` | 14 | 14 | 14 (6 best-effort) | 0 |
 | `high_n` | `high_n_scaling_mixed.pdf` (+ `_table.tex`) | 10 | 16 | 16 | 0 |
 
-The runs behind each bar were not guessed: `_build_manifest.py` executes each figure's own offline
-selection pipeline on the committed snapshot and records which run id landed in each cell (for
+The runs behind each bar were not guessed: the manifest was built by executing each figure's own
+offline selection pipeline on the committed snapshot and recording which run id landed in each cell (for
 `random_loc` the id is carried through the Plotter's `aggfunc="first"` pivot as an extra column).
 Launch args, git commit and host come from each run's stored `wandb-metadata.json`; env knobs
 (`GCBF_GOAL_SCALE`, `GCBF_TEAM_SELECT_OUTER`) from the `env_*` config keys `test.py` records.
@@ -72,7 +71,8 @@ runs at N ≤ 32 (docker sweep, commit `5227c2d0`, 2026-06-23) and the `GCBF_GOA
 area-10 / epi-3 runs at N ≥ 64; the **TtR and plan-time** panels use the gs2.0 run at every N
 (commit `2d6867f6`, 2026-06-25). So N ≤ 32 needs two runs per cell — the manifest marks them
 `role=success` / `role=timing`, N ≥ 64 rows are `role=both`. `plan_time_mean` is not comparable
-across goal scales, which is why the panels are sourced separately (`scripts/high_n_scaling_notes.md`).
+across goal scales, which is why the panels are sourced separately (see the comments in
+`scripts/high_n_plot_config.yaml`).
 
 ## Known limits
 
@@ -117,12 +117,9 @@ across goal scales, which is why the panels are sourced separately (`scripts/hig
    (no fallback) again gives AE = 0 on all three figures. This exercises the real parsing path.
 3. `bash scripts/replot_all_final.sh` passes 4/4 (random predicates, team specs, high-N scaling, achievable-loss table) with every figure and table unchanged.
 
-## Regenerating the bundle (maintainers)
+## Regenerating the bundle
 
-```bash
-python scripts/release/_build_manifest.py            # re-selects runs from the snapshots, refetches W&B metadata
-python scripts/release/_build_manifest.py --no-fetch # same, from _wandb_metadata_cache.json
-```
-
-Run it whenever a snapshot, a plot config, or a selection rule changes, so the script and manifest
-never drift from the figures in `out_final/`.
+`reproduce_final_plots.sh` and `final_plots_manifest.csv` are generated from the source W&B
+projects, which this release does not include, so they are shipped as-is and are pinned to the
+snapshots in `plot_snapshots/`. If you change a snapshot, a plot config or a selection rule, the
+regenerated figures in `out_final/` will drift from this bundle.

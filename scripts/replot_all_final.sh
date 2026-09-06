@@ -37,11 +37,6 @@ run_step () {  # run_step "label" cmd...
 # ---------------------------------------------------------------------------
 # Figures (plot_paper.py). --data-csv is added only in csv (offline) mode.
 # ---------------------------------------------------------------------------
-fig_single_hetero () {  # figure + matching LaTeX results table (--table)
-  local a=(--figure single_hetero_dubins --source "$SOURCE" --out-dir "$OUT_DIR" --table)
-  [ "$SOURCE" = csv ] && a+=(--data-csv plot_snapshots/single_hetero_DubinsCar_data.csv.gz)
-  python plot_paper.py "${a[@]}"
-}
 fig_random_loc () {  # figure + matching LaTeX results table (--table)
   local a=(--figure random_loc_dubins --source "$SOURCE" --out-dir "$OUT_DIR" --table)
   [ "$SOURCE" = csv ] && a+=(--data-csv plot_snapshots/random_loc_DubinsCar_data.csv.gz)
@@ -62,12 +57,12 @@ fig_high_n () {  # high-N scaling curve + Safe/Finish/Success table explaining t
 # ---------------------------------------------------------------------------
 # Tables.
 # ---------------------------------------------------------------------------
-tbl_ach_mixed4 () {  # achievable-loss ablation, 4-component Mixed (swap FLAG per overrides yaml)
+tbl_ach_mixed4 () {  # achievable-loss ablation, 4-component Mixed, from the single_hetero
+                     # snapshot (swap FLAG per scripts/ach_ablation_overrides.yaml)
   python scripts/make_ach_ablation_table.py --source "$SOURCE" \
     --out "$OUT_DIR/ach_ablation_mixed4.tex"
 }
 
-# run_step "fig: single_hetero (fixed centers)" fig_single_hetero   # fixed predicate centers: not plotted
 run_step "fig: random_loc (random pred.)" fig_random_loc
 run_step "fig: team_spec (CaTL)"          fig_team_spec
 run_step "fig: high_n scaling (N=8..128)" fig_high_n
